@@ -10,7 +10,8 @@ import {chromium} from 'playwright';
 const root = fileURLToPath(new URL('../../', import.meta.url));
 const output = path.resolve(process.env.NIGHTLAB_ARTIFACT_DIR || path.join(root, 'artifacts/nightlab'));
 await mkdir(output, {recursive: true});
-const mount = '/nested/browser/';
+const mount = process.env.NB1_BROWSER_TEST_MOUNT || '/nested/browser/';
+assert.ok(/^\/(?:[a-zA-Z0-9_-]+\/)+$/.test(mount), 'test mount must be a bounded project subpath');
 const types = {'.html':'text/html', '.js':'text/javascript', '.css':'text/css', '.wasm':'application/wasm', '.json':'application/json', '.png':'image/png', '.jpg':'image/jpeg', '.woff2':'font/woff2', '.webp':'image/webp'};
 const requests = [], errors = [], outside = [], failed = [], captures = [], checks = [];
 const server = http.createServer(async (request, response) => {
@@ -280,6 +281,15 @@ async function colorSets() {
   console.log(JSON.stringify({status:'PASS',checks:checks.length,captures:captures.length,output}));
 }
 try {
+  const manifestResponse=await fetch(base+mount+'site-build.json');
+  assert.equal(manifestResponse.status,200,'public website provenance loads under the project subpath');
+  const publicBytes=Buffer.from(await manifestResponse.arrayBuffer());
+  assert.deepEqual(publicBytes,await readFile(path.join(root,'dist/web/site-build.json')));
+  const publicBuild=JSON.parse(publicBytes.toString('utf8'));
+  assert.equal(publicBuild.channel,'development-preview');
+  assert.equal(publicBuild.extension.status,'experimental');
+  assert.equal(publicBuild.core.source_commit,'b5cfe68cbb412d81a80d948b845aee5b0aba586b');
+  checks.push('Public source and closed website manifest served intact under '+mount);
   if(process.argv.includes('--color-sets')||process.argv.includes('--catalog-only'))await colorSets();else if(process.argv.includes('--cycles'))await cycleDefaults();else if(process.argv.includes('--usability'))await usability();else {
   await page.goto(base+mount, {waitUntil:'networkidle'}); await waitReady();
   assert.equal(await page.locator('html').getAttribute('lang'),'en');

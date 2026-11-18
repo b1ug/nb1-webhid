@@ -40,6 +40,9 @@ The build creates:
 - **dist/extension/** — unpacked Manifest V3 extension, with manifest.json at its root.
 - **dist/web/extension-download/nb1-extension.zip** — a ZIP with the same extension files at its root.
 - **dist/build.json** — source commit, source_dirty, pinned Go source, toolchain and per-file byte counts / SHA-256.
+- **dist/web/site-build.json** — public development-preview identity, released core source and hashes of every website payload file except this manifest itself. It contains no local filesystem paths or physical-device receipts.
+
+Publish only **dist/web/** as the static website. Asset links are relative and support a project subpath such as `/nb1-browser-tools/`. Pages deployment waits for both Node builds and the software browser checks; pull requests never deploy. Source publication and preview hosting do not make the experimental extension a stable release.
 
 The extension ZIP also carries **BUILD-INFO.json**, both READMEs and the complete **docs/** directory for offline installation, privacy and recovery guidance. BUILD-INFO.json identifies the source, development status, manifest version and compiler receipt; it does not hash itself or claim to sign the package. The download page supplies SHA256SUMS for the actual ZIP.
 

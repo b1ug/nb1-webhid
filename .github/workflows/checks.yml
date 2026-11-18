@@ -6,26 +6,83 @@ on:
   workflow_dispatch:
 permissions:
   contents: read
+concurrency:
+  group: browser-tools-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
 jobs:
   software:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
     strategy:
+      fail-fast: false
       matrix:
         node: [22, 26]
+    env:
+      GOWORK: "off"
+      GOTOOLCHAIN: local
+      GID_TEST_ENUMERATE: "0"
+      GID_TEST_DEVICE_PATH: ""
+      NB1_BROWSER_TEST_MOUNT: /nb1-browser-tools/
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 # v6
         with:
           node-version: ${{ matrix.node }}
-      - uses: actions/setup-go@v5
+          cache: npm
+      - uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
         with:
-          go-version-file: .go-version
+          go-version: "1.27.4"
           cache: false
+      - run: npm ci --ignore-scripts
       - run: npm run build
       - run: npm test
       - run: npm run test:compiler
       - run: npm run check
-      - uses: actions/upload-artifact@v4
+      - run: npm run test:nightlab:preview
+      - run: npm run test:nightlab:model
+      - name: Install the software-only Chromium test runtime
+        if: matrix.node == 26
+        run: npx playwright install --with-deps chromium
+      - name: Verify Nightlab and project-subpath behavior without hardware
+        if: matrix.node == 26
+        env:
+          NIGHTLAB_ARTIFACT_DIR: ${{ runner.temp }}/nb1-browser-nightlab
+        run: npm run test:nightlab
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: nb1-browser-node-${{ matrix.node }}
           path: dist/
+          if-no-files-found: error
+          retention-days: 7
+      - name: Preserve software browser evidence
+        if: always() && matrix.node == 26
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: nb1-browser-nightlab
+          path: ${{ runner.temp }}/nb1-browser-nightlab
+          if-no-files-found: warn
+          retention-days: 7
+      - name: Stage the verified development-preview website
+        if: matrix.node == 22 && github.event_name != 'pull_request' && github.ref == 'refs/heads/main' && github.event.repository.private == false
+        uses: actions/upload-pages-artifact@7b1f4a764d45c48632c6b24a0339c27f5614fb0b # v4
+        with:
+          path: dist/web/
+  deploy:
+    if: github.event_name != 'pull_request' && github.ref == 'refs/heads/main' && github.event.repository.private == false
+    needs: software
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    permissions:
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Read the repository's configured Pages source
+        uses: actions/configure-pages@983d7736d9b0ae728b81ab479565c72886d7745b # v5
+      - name: Publish the checked development preview
+        id: deployment
+        uses: actions/deploy-pages@d6db90164ac5ed86f2b6aed7e0febac5b3c0c03e # v4

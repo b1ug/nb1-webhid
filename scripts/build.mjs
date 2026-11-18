@@ -80,6 +80,25 @@ for(const zh of [false,true]){
   await fs.writeFile(path.join(download,zh?'zh.html':'index.html'),page);
 }
 await fs.writeFile(path.join(download,'download.css'),'main{max-width:760px;margin:45px auto;padding:28px}h1{margin-top:22px}li+li{margin-top:10px}.checksum{font-size:11px;overflow-wrap:anywhere}.checksum code{word-break:break-all}@media(max-width:800px){main{margin:20px 14px;padding:20px}h1{font-size:28px}}');
+// Public provenance covers only the website payload. Its own bytes are excluded
+// to avoid a self-referential checksum; the outer build record includes it.
+const webRoot=path.join(stage,'web'),webFiles={};
+async function publicFiles(directory){
+  for(const entry of await fs.readdir(directory,{withFileTypes:true})){
+    const name=path.join(directory,entry.name);
+    if(entry.isSymbolicLink())throw Error('Unexpected website symlink');
+    if(entry.isDirectory())await publicFiles(name);
+    else {const bytes=await fs.readFile(name);webFiles[path.relative(webRoot,name).split(path.sep).join('/')]={bytes:bytes.length,sha256:hash(bytes)};}
+  }
+}
+await publicFiles(webRoot);
+const siteBuild={schema_version:1,artifact_kind:'nb1-browser-development-preview',
+  source:{repository:'https://github.com/b1ug/nb1-browser-tools',commit:source,dirty},
+  core:{repository:'https://github.com/b1ug/nb1',version:'v0.1.1',source_commit:compilerReceipt.source_commit},
+  channel:'development-preview',extension:{name:extensionManifest.name,status:'experimental',version:extensionManifest.version,hardware_qualified:false},
+  compiler:{go_version:compilerReceipt.go_version,wasm_sha256:compilerReceipt.files['nb1.wasm'].sha256},
+  self_manifest_excluded:true,files:Object.fromEntries(Object.entries(webFiles).sort(([a],[b])=>a.localeCompare(b)))};
+await fs.writeFile(path.join(webRoot,'site-build.json'),JSON.stringify(siteBuild,null,2)+'\n');
 const files=[];
 async function walk(directory){for(const entry of await fs.readdir(directory,{withFileTypes:true})){const name=path.join(directory,entry.name);if(entry.isSymbolicLink())throw Error('Unexpected output symlink');if(entry.isDirectory())await walk(name);else{const bytes=await fs.readFile(name);files.push({path:path.relative(stage,name),bytes:bytes.length,sha256:hash(bytes)});}}}
 await walk(stage);
