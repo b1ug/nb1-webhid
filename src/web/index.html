@@ -1,0 +1,55 @@
+<!doctype html>
+<html lang="en" data-nb1-app="browser">
+<head>
+  <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self';script-src 'self' 'wasm-unsafe-eval';style-src 'self' 'unsafe-inline';img-src 'self' data:;connect-src 'self';object-src 'none';base-uri 'none';form-action 'none'">
+  <title>nb1 Browser Workbench</title>
+  <meta name="description" content="Choose an Action and play blink(1) directly from your browser with the shared nb1 Go compiler.">
+  <link rel="icon" href="./shared/assets/nb1-icon.png"><link rel="stylesheet" href="./shared/theme.css"><link rel="stylesheet" href="./shared/vendor/json-editor.css"><link rel="stylesheet" href="./style.css">
+  <link rel="stylesheet" href="./shared/nightlab/airwave-tokens.css"><link rel="stylesheet" href="./airwave.css">
+  <script src="./shared/vendor/action-icons.js" defer></script><script src="./shared/vendor/json-editor.js" defer></script><script type="module" src="./app.js"></script>
+  <link rel="stylesheet" href="./shared/nightlab/studio.css"><link rel="stylesheet" href="./studio.css"><link rel="stylesheet" href="./shared/nightlab/studio-skins.css">
+  <script src="./shared/nightlab/studio-appearance.js"></script>
+  <script src="./shared/nightlab/studio.js" defer></script><script src="./shared/nightlab/composer-ui.js" defer></script>
+  <script type="module" src="./shared/nightlab/accepted-targets.js"></script><script type="module" src="./shared/nightlab/studio-preview.js"></script><script type="module" src="./shared/nightlab/studio-3d.js"></script>
+</head>
+<body>
+<a class="skip" href="#workbench" data-i18n="skip">Skip to workbench</a>
+<header><nav class="wrap"><a class="brand" href="./"><img src="./shared/assets/nb1-mascot.webp" alt="nb1" width="44" height="44">nb1</a><span class="nav-label" data-i18n="browserWorkbench">Browser workbench</span><a href="https://github.com/b1ug/nb1-browser-tools" data-i18n="source">Source</a><button id="language" class="quiet" type="button" aria-label="Switch to Chinese">中文</button></nav></header>
+<main class="wrap" id="workbench">
+  <section class="hero"><div><p class="studio-kicker">NB1 / LIGHT STUDIO</p><h1 data-i18n="headline" data-type-role="heading">A little light, your way.</h1><p data-i18n="intro" hidden>Choose an Action, make it yours, and press Play.</p></div><span class="badge" id="compiler-status" role="status">Loading Go compiler…</span></section>
+  <div class="studio-shell">
+  <section class="card composer" aria-label="Current signal parameters">
+  <section class="studio-effect-bank" aria-labelledby="create-title">
+    <div class="section-heading"><h2 id="create-title" data-type-role="caption" data-i18n="create">Pick an Action</h2><span class="badge" id="mode-label">Action controls</span></div>
+    <div id="presets" class="presets" aria-label="Actions"></div>
+  </section>
+
+    <div class="stage-grid">
+      <section class="action-stage" aria-labelledby="action-title"><h3 id="action-title">Set</h3><p class="meta" id="action-description"></p><div id="custom-hint" class="custom-hint" hidden><p data-i18n="customHint">Your JSON is the draft. Play and Export use it exactly as written.</p><button id="use-action" type="button" class="secondary" data-i18n="useAction">Use Action controls</button></div><div id="action-fields" class="field-grid"></div></section>
+      <section class="play-stage" aria-label="Playback">
+        <div class="play-controls"><div class="play-actions"><button id="preview" type="button" class="secondary" disabled data-i18n="preview">Preview without playing</button><button id="play" class="primary" type="button" disabled data-i18n="play">Play</button><button id="stop" class="secondary" type="button" disabled data-i18n="stop">Stop</button><button id="off" class="danger" type="button" disabled data-i18n="off">Off</button></div><p id="play-state" class="play-state" role="status" aria-live="polite"></p></div><progress id="play-progress" value="0" max="1" hidden></progress>
+        <div id="status" class="notice" role="status" aria-live="polite">Choose an Action. Play compiles and checks it before sending.</div>
+      </section>
+    </div>
+  </section>
+  <aside class="studio-sidebar" aria-label="Light and connection">
+  <section class="card device-bar" aria-labelledby="device-title">
+    <div class="device-main"><div class="device-label"><h2 id="device-title" data-type-role="heading" data-i18n="yourLight">Your light</h2><span class="badge" id="connection" role="status">Not connected</span><span class="meta" id="device-info">—</span></div><div class="row device-actions"><button id="connect" type="button" disabled data-i18n="connect">Connect blink(1)</button><button id="disconnect" class="secondary" type="button" disabled data-i18n="disconnect">Disconnect</button></div></div>
+    <details id="connection-options"><summary data-i18n="connectionOptions">Connection options</summary><p class="meta" data-i18n="ownership">Stop the native nb1 daemon or other controllers using this light before connecting here.</p><label class="checkbox"><input id="ownership" type="checkbox"><span data-i18n="ownershipCheck">I have stopped other controllers for this light.</span></label><p id="hid-support" class="footnote"></p><p class="footnote" data-i18n="disconnectNote">Disconnect keeps the last color. Use Off to turn the light dark. No device storage is written.</p></details>
+  </section>
+  <section class="light-stage" data-light-stage data-i18n-skip aria-label="Light object, screen study"></section>
+  </aside>
+  </div>
+  <section class="secondary-tools" aria-label="Advanced tools"><h2 data-composer-copy="advanced">Advanced tools</h2>
+    <details id="advanced"><summary data-i18n="advanced">Advanced JSON</summary><div class="row editor-label"><label for="request" data-i18n="requestJSON">Request JSON</label><button class="quiet" type="button" id="sequence-example" data-i18n="sequenceExample">Sequence example</button></div><textarea id="request" rows="11" spellcheck="false">{"action":{"kind":"set","color":"#086040","led":0}}</textarea><p class="footnote" data-i18n="jsonNote">Editing or importing JSON switches to a custom draft. Choose an Action to return to its controls.</p>
+    <div class="file-tools"><p class="meta" data-i18n="portable">Keep a portable Sequence for native nb1. Import and Export never play the light.</p><div class="row"><button id="export" type="button" class="secondary" disabled data-i18n="export">Export for nb1</button><button id="import" type="button" class="quiet" data-i18n="import">Import JSON</button><input id="file" type="file" accept=".json,application/json" hidden></div></div>
+    <details class="cli-help"><summary data-i18n="useCLI">Use the file with nb1</summary><pre>nb1 control preview light.sequence.json
+nb1 control patterns save evening-light light.sequence.json</pre><p class="footnote" data-i18n="cliNote">Use a matching API v1 nb1 and your selected daemon. Saving a Pattern creates no playback.</p></details></details>
+    <details id="preview-details"><summary data-i18n="previewTitle">Compiled Sequence</summary><p id="preview-summary" class="meta">No preview yet.</p><div id="swatches" class="swatches" aria-label="Compiled target colors"></div><pre id="compiled" tabindex="0">Your compiled Sequence will appear here.</pre><p class="footnote" data-i18n="previewNote">Compiler output is separate from device command acceptance and physical light measurements.</p></details>
+    <details class="play-help"><summary data-i18n="help">Help</summary><p data-i18n="colorHelp">Names, #abc, #RRGGBB, rgb8 or hsv JSON. Colors are resolved by the shared Go compiler.</p><p class="footnote stop-note" data-i18n="stopNote">Stop cancels upcoming Steps; a fade already sent may finish. Off turns the light dark.</p><div id="live-targets" hidden><p class="footnote" data-i18n="commandedColors">Last accepted colors · not an optical measurement</p><div id="live-swatches" class="swatches"></div></div></details>
+  </section>
+  <section class="extension-links"><p data-i18n="extensionIntro">Take manual control and timer reminders into the companion Chrome extension.</p><div class="row"><a href="./extension-download/" data-i18n="extensionPackage">Extension package and instructions</a><a href="./extension-plan.md" data-i18n="extensionPlan">Extension plan</a></div></section>
+  <footer><p data-i18n="footer">nb1 · Local browser tools · MIT License</p><p class="meta" data-i18n="scope" hidden>Software checks and real USB tests are recorded separately. Browser and daemon ownership must be switched explicitly.</p></footer>
+</main>
+</body></html>

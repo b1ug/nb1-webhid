@@ -1,0 +1,27 @@
+{
+  "name": "nb1-browser-tools",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "nb1 Browser Workbench and experimental WebHID light reminders, sharing the released Go compiler",
+  "license": "MIT",
+  "engines": {
+    "node": ">=22.12.0"
+  },
+  "scripts": {
+    "build:compiler": "python3 scripts/build-compiler.py",
+    "build:ui": "node scripts/build.mjs",
+    "build": "npm run build:compiler && npm run build:ui",
+    "test": "node --test tests/*.test.mjs",
+    "test:compiler": "node scripts/verify-compiler.mjs",
+    "check": "node scripts/check.mjs",
+    "serve": "node scripts/serve.mjs",
+    "test:nightlab": "node scripts/nightlab/smoke.mjs",
+    "test:nightlab:model": "node scripts/nightlab/model-contract.mjs",
+    "test:nightlab:fit": "node scripts/nightlab/enclosure-fit.test.mjs",
+    "test:nightlab:preview": "node scripts/nightlab/preview-timeline.test.mjs"
+  },
+  "devDependencies": {
+    "playwright": "1.64.1"
+  }
+}

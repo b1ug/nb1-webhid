@@ -1,0 +1,173 @@
+{
+  "reference": "Approved nb1 Nightlab presentation",
+  "selected_appearance": "Nightlab",
+  "integrated_on": "2026-11-15",
+  "source_files": {
+    "airwave-tokens.css": {
+      "sha256": "ddebd8181bb960fe3e4ed2c8e4c26dfd51e60d3380e3b9d9179f50d20fb790a3",
+      "bytes": 1759,
+      "handoff_path": "source/airwave-tokens.css"
+    },
+    "studio.css": {
+      "sha256": "9eae598a9aee81b83f78f4e9eb7a0d3fbd6afd9b80f090868cc3d1dbde1fc3a0",
+      "bytes": 11773,
+      "handoff_path": "source/studio.css"
+    },
+    "studio.js": {
+      "sha256": "bacd276638040d2cf71cd920b63f173d8c6880b9420bee6db4e7dc9949b2d601",
+      "bytes": 16508,
+      "handoff_path": "source/studio.js"
+    },
+    "composer-ui.js": {
+      "sha256": "05452451900d07997d52bf424c0e721815b579ccc072b6c0b8f346a63cd75b1f",
+      "bytes": 9865,
+      "handoff_path": "source/composer-ui.js"
+    },
+    "studio-preview.js": {
+      "sha256": "56999a1adbaf374319e4592e0275ffd2dba5c5495d06fb9741fc5c35e83accfe",
+      "bytes": 11518,
+      "handoff_path": "source/studio-preview.js"
+    },
+    "preview-timeline.js": {
+      "sha256": "b23ae94095100282d34c68c3dd4b7dc8aa35e27bbf061e0e1fafbfebf8eb3cc4",
+      "bytes": 7049,
+      "handoff_path": "source/preview-timeline.js"
+    },
+    "studio-3d.js": {
+      "sha256": "2864d9f599003cf31b3ac3a6ecb8d9d7663e5aae7972d822fd2ca62094421baa",
+      "bytes": 23451,
+      "handoff_path": "source/studio-3d.js"
+    },
+    "light-model.js": {
+      "sha256": "764a0e92f26f6a6f32d00883c780965a852d335b951d9f27e2c1a316fae946e7",
+      "bytes": 23440
+    },
+    "enclosure-fit.js": {
+      "sha256": "33a8c0fba98e078b9497da20289508ff5da08a4cfccc8abafbeec36a336ece99",
+      "bytes": 21789,
+      "handoff_path": "source/enclosure-fit.js"
+    },
+    "studio-appearance.js": {
+      "sha256": "0ebb37284d1e56cec1afdf616f253931ff480ab8401241b758a924a885a6a46c",
+      "bytes": 7915,
+      "handoff_path": "source/studio-appearance.js"
+    },
+    "studio-skins.css": {
+      "sha256": "341e2f2dc51f7ab89062b76479571d030c74f705b678af6f389ae3f887b612d0",
+      "bytes": 17964,
+      "handoff_path": "source/studio-skins.css"
+    },
+    "home.css": {
+      "sha256": "75a48375d1b052ec8412b96f917cea2a43b5f52791eb6ce2514ce14d3b852520",
+      "bytes": 4122,
+      "handoff_path": "source/home.css"
+    },
+    "model-assets/source.json": {
+      "bytes": 14397,
+      "sha256": "2ad70d26bed617c673da560aada880008d388b5ca9e5520824ab6984284b211d"
+    },
+    "model-assets/seating-fit.json": {
+      "sha256": "04516bf501b32ff8667a1738a99fad4cfde10cb5bcfc30836841115111d0c3c5",
+      "bytes": 3399,
+      "handoff_path": "source/model-assets/seating-fit.json"
+    },
+    "model-assets/blink1mk2_enclosure_diffuser_v3k.stl": {
+      "sha256": "297986ee78dee7ce5607b43edd8967cd7b9d509496261214c5c68587d892af18",
+      "bytes": 3940514,
+      "handoff_path": "source/model-assets/blink1mk2_enclosure_diffuser_v3k.stl"
+    },
+    "model-assets/LICENSE.txt": {
+      "sha256": "e0a5f70deb9c79bb8533122057d00f6fb20b2c050ee63123e3e6538da329ceea",
+      "bytes": 351,
+      "handoff_path": "source/model-assets/LICENSE.txt"
+    },
+    "model-assets/blink1mk2_enclosure_frame_v3k.stl": {
+      "sha256": "ba0797af2873c0fc4c3477b87cde07ca1b9ec761eda001b21abe101ce035b465",
+      "bytes": 1606855,
+      "handoff_path": "source/model-assets/blink1mk2_enclosure_frame_v3k.stl"
+    },
+    "vendor/three/three.module.js": {
+      "sha256": "104f56145899722094556490d787aae0617cc2fc3382f31df02d724ea1aee341",
+      "bytes": 658900,
+      "handoff_path": "demo/vendor/three/three.module.js"
+    },
+    "vendor/three/STLLoader.js": {
+      "sha256": "5dc2e3c6b77bb6199fa13c261234bede72508ae5c3dcdcad7cc5002e53d53319",
+      "bytes": 10800,
+      "handoff_path": "demo/vendor/three/STLLoader.js"
+    },
+    "vendor/three/LICENSE": {
+      "sha256": "8b378ebe60e2fe500158cb0ac71cb5e8b7d92953c2abcc63a0eb90499653b5bc",
+      "bytes": 1081,
+      "handoff_path": "demo/vendor/three/LICENSE"
+    },
+    "vendor/three/RoomEnvironment.js": {
+      "sha256": "77d4d2bed2b60cb98424764264aedd84b56bbf3211e0f48430e15608aeded9dc",
+      "bytes": 4972,
+      "handoff_path": "demo/vendor/three/RoomEnvironment.js"
+    },
+    "vendor/three/three.core.js": {
+      "sha256": "613e370f76638fdef83926642bf256dc9615684922de1ce1f63a8583e5d78578",
+      "bytes": 1474799,
+      "handoff_path": "demo/vendor/three/three.core.js"
+    },
+    "vendor/three/OrbitControls.js": {
+      "sha256": "a747d56dd959510407777f1800792b2b52c0a435980fd6e40caf303d8a674b9e",
+      "bytes": 40930,
+      "handoff_path": "demo/vendor/three/OrbitControls.js"
+    },
+    "model-reference.html": {
+      "sha256": "d7bd813b60b67679180aff55f74cf88e3e6cfa15ede9dab5c16a05329e61ee55",
+      "bytes": 3076
+    },
+    "model-reference.js": {
+      "sha256": "b97506abc8e95417e9ea7af2e3b5c4baac79a182868a081e4a9103095334de99",
+      "bytes": 4036
+    }
+  },
+  "adaptations": [
+    "Explicit data-nb1-app=browser replaces review route inference.",
+    "Relative compiler and model-reference module paths support arbitrary browser mount bases.",
+    "Real accepted-target DOM adapter replaces software review report events."
+  ],
+  "preserved": [
+    "Approved artwork",
+    "Raw STL, source license, derived enclosure fitting and continuous additive light field",
+    "Existing Go compilerb5cfe68c and matched wasm_exec.js",
+    "WebHID ownership confirmation, transport, command/player and extension behavior"
+  ],
+  "browser_styles": {
+    "airwave.css": {
+      "sha256": "4a59a177b4f30bd9621313b23047f1585051437151330d38c353cf248a757f6a",
+      "bytes": 17544,
+      "handoff_path": "source/browser/src/web/airwave.css"
+    },
+    "studio.css": {
+      "sha256": "8af8b378eb9a9417c3223164d88dfe296f257c91318dcaf1bbbfb161da4780b5",
+      "bytes": 14203
+    }
+  },
+  "adapted_browser_styles": {
+    "studio.css": {
+      "sha256": "34e863fdf8d2f8a0c7e538cfd289360c04370cea89250e4a696f73e792dec7e6",
+      "bytes": 8282,
+      "handoff_path": "source/browser/src/web/studio.css",
+      "integration_changes": "Authorized compact mobile layout and control hierarchy; original handoff hash retained."
+    }
+  },
+  "mobile_polish": {
+    "authorization": "User-approved coherent mobile copy/layout pass",
+    "scope": [
+      "Visible LED 1 blink(1) / LED 2 ThingM mapping, order 0/separate/1/2",
+      "Two-row mobile playback hierarchy; real DOM editing order; Help/Advanced disclosures",
+      "Critical errors and connection meaning retained; redundant status copy quieted"
+    ],
+    "unchanged": [
+      "Nightlab semantic palette/type roles, approved artwork and model",
+      "Compiler/transport/player/extension permissions and behavior"
+    ]
+  },
+  "public_export_note": "Public source keeps approved artwork, original CAD/licenses and rendering code. Internal screenshots, device receipts, project-note excerpts and private source paths remain outside this repository.",
+  "public_metadata_adaptation": "Only the faceMappingSource attribution string in light-model.js is replaced with a public source note; geometry, shaders and channel mapping retain their approved behavior.",
+  "public_mobile_correction": "At the existing one-column breakpoint, reset the composer to grid-column 1 so the preview sidebar does not collapse into a zero-width implicit column. Tokens, fonts, model and shader code are preserved."
+}

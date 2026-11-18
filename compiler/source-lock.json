@@ -1,0 +1,124 @@
+{
+  "schema_version": 1,
+  "repository": "https://github.com/b1ug/nb1.git",
+  "source_commit": "b5cfe68cbb412d81a80d948b845aee5b0aba586b",
+  "packages": [
+    "actionv1",
+    "sequence",
+    "colorinput",
+    "jsoninput"
+  ],
+  "reuse_policy": "Build-time upstream archive in its original module context. Only our JSON bridge is added; the shared compiler sources are never rewritten.",
+  "files": [
+    {
+      "path": "LICENSE",
+      "bytes": 1076,
+      "sha256": "a428d1101807989e11ae625f4316d360a27b2a922f4f6cb6ce5981e8cfeafe93"
+    },
+    {
+      "path": "go.mod",
+      "bytes": 2874,
+      "sha256": "616f28b28bf4c92ff0513687f068ec0ae1f27ef5d02d072c7c9de0b0abc78618"
+    },
+    {
+      "path": "go.sum",
+      "bytes": 59091,
+      "sha256": "955277101eee51b84f3d8f5a9e527bb0b12f65f48b37523a6a010a13c70352e6"
+    },
+    {
+      "path": "internal/actionv1/compile.go",
+      "bytes": 7053,
+      "sha256": "4a42d207ba697f1a8095c2b332a55e4a83aff61bce43c1ef63e96db68e2bfaa7"
+    },
+    {
+      "path": "internal/actionv1/compile_test.go",
+      "bytes": 7820,
+      "sha256": "1400dbb56c29942fc4b643e5dad027fc725ac0b29f34bb4e95153c42da8e6193"
+    },
+    {
+      "path": "internal/actionv1/recipe.go",
+      "bytes": 5954,
+      "sha256": "701218f41d1253ccfa8d6389d9e9fdf34d7ca41f5d305642ca29748dce554302"
+    },
+    {
+      "path": "internal/colorinput/README.md",
+      "bytes": 2437,
+      "sha256": "148106e6e01c2f44c0a3c56d9d3a632dbd491ac40fc9b1fb5bbd24dc1485719f"
+    },
+    {
+      "path": "internal/colorinput/colorinput.go",
+      "bytes": 7620,
+      "sha256": "29e868f1eadbaf0a66495def36e929ae1010a800a8c4332fc7baf242d39c75cf"
+    },
+    {
+      "path": "internal/colorinput/colorinput_test.go",
+      "bytes": 12043,
+      "sha256": "5c172b247e94f81e9ea0ac6d8692e6229200a3d372d4b9bafffcf09dbda9aaaf"
+    },
+    {
+      "path": "internal/colorinput/hsv.go",
+      "bytes": 773,
+      "sha256": "2e277bb30814940a42798e969cac8442e4a92ae57d39132ee09c90bee0ed9949"
+    },
+    {
+      "path": "internal/colorinput/testdata/css-named-2026.tsv",
+      "bytes": 4282,
+      "sha256": "521686f82ac6c649de3f22589783ac86e2bfeb0c1858fd953f59efc4e1d2fd09"
+    },
+    {
+      "path": "internal/colorinput/testdata/hsv-golden.json",
+      "bytes": 5151,
+      "sha256": "de9d72d991ea51364aaabf680da983f9ea3754249a0dfee635983e2103c19c17"
+    },
+    {
+      "path": "internal/jsoninput/decode.go",
+      "bytes": 3413,
+      "sha256": "44322b931c130f6ac4e867ecd3b2c6a64395005eacb172f7239cdcf5e6c4cffa"
+    },
+    {
+      "path": "internal/jsoninput/decode_test.go",
+      "bytes": 2523,
+      "sha256": "66598e9a35042338a6da553628a42d9b385454d2c900b88cfcac7126d2542c90"
+    },
+    {
+      "path": "internal/jsoninput/unicode.go",
+      "bytes": 1188,
+      "sha256": "2ae42adc7edc1733a17fdabaf69bfd8aaa51b6ec742315806f52c1e0de2290a1"
+    },
+    {
+      "path": "internal/jsoninput/unicode_test.go",
+      "bytes": 837,
+      "sha256": "e87f3f8ef5b8a68f14a9f5c67dc618bf0bdbe81ae012390e2887b09dc21922d3"
+    },
+    {
+      "path": "internal/sequence/authoring_test.go",
+      "bytes": 3643,
+      "sha256": "a2d2c651a76939805a8fefc46ea440bd3a61137103fb9bb14c75edbaa9b4dc3e"
+    },
+    {
+      "path": "internal/sequence/decode.go",
+      "bytes": 3730,
+      "sha256": "5a94c62f8c2f4b4e7bca46a7cc9bd5bed5ee7a12cd644b5aa670cdf971bd6e84"
+    },
+    {
+      "path": "internal/sequence/playback.go",
+      "bytes": 5678,
+      "sha256": "7ca85593af61a4c08d75f560973a57c65159bad48d7e20991c87c7baca7b8de1"
+    },
+    {
+      "path": "internal/sequence/playback_test.go",
+      "bytes": 6874,
+      "sha256": "c096e1b06b5bd8a42585803836a53ceb0c68a39378f9dd21502b33e416924257"
+    },
+    {
+      "path": "internal/sequence/sequence.go",
+      "bytes": 6634,
+      "sha256": "7a4520451be301facaa39132c9489a161f7f83ffa99360b4e8deaf8513268746"
+    },
+    {
+      "path": "internal/sequence/sequence_test.go",
+      "bytes": 6246,
+      "sha256": "a4fbfdf0e764e9161f44d82890c16810d1e90c08aaaeef41a7506176c7a5e8ca"
+    }
+  ]
+}
