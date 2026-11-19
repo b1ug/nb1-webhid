@@ -65,15 +65,30 @@ async function waitReady(flat=false) {
 async function daemonDiagnostics() {
   await page.goto(base + mount + '?view=faces', {waitUntil:'networkidle'});
   await waitReady(true);
-  const fixture = 'http://127.0.0.1:49386/v1/presence';
-  let calls = 0;
-  let identity = true;
+  const service = 'http://127.0.0.1:49386';
+  const fixture = service + '/v1/*';
+  const calls = [];
+  let presence = true;
+  let devices = {configured:2, online:1};
+  let summaryBlocked = false;
   await page.route(fixture, route => {
-    calls++;
-    assert.equal(route.request().method(), 'GET');
-    return route.fulfill({status:200, contentType:'application/json', headers:{'Access-Control-Allow-Origin':base},
-      body:JSON.stringify(identity ? {service:'nb1', api_version:'v1'} : {status:'ok'})});
+    const request = route.request(), pathname = new URL(request.url()).pathname;
+    assert.equal(request.method(), 'GET');
+    calls.push(pathname);
+    let record = {service:'nb1', api_version:'v1'};
+    if (pathname === '/v1/presence') {
+      if (!presence) record = {status:'ok'};
+    } else {
+      assert.equal(pathname, '/v1/service-status');
+      if (summaryBlocked) return route.abort();
+      record = {...record, health:'ok', devices};
+    }
+    return route.fulfill({status:200, contentType:'application/json', headers:{'Access-Control-Allow-Origin':base},body:JSON.stringify(record)});
   });
+  const select = page.locator('#daemon-service'), port = page.locator('#daemon-port');
+  const check = page.locator('[data-daemon-check]'), debuggerLink = page.locator('#daemon-debugger');
+  const result = page.locator('#daemon-result');
+  const expectText = text => page.waitForFunction(text=>document.querySelector('#daemon-result').textContent.includes(text), text);
   try {
     await page.locator('#connect').click();
     await page.locator('#ownership').check();
@@ -82,33 +97,50 @@ async function daemonDiagnostics() {
     await page.waitForSelector('#open-daemon-help:not([hidden])');
     const hidError = await page.locator('#status').textContent();
     assert.match(hidError, /could not open/);
-    assert.equal(calls, 0);
-    assert.equal(await page.locator('#daemon-port').inputValue(), '8931');
-    const check = page.locator('#open-daemon-help [data-daemon-check]');
-    await page.locator('#daemon-port').fill('65536');
+    assert.equal(await select.inputValue(), '8931');
+    assert.equal(await port.isVisible(), false);
+    assert.equal(await debuggerLink.getAttribute('href'), 'http://127.0.0.1:8931/demo/');
+    await select.selectOption('custom');
+    await port.fill('65536');
     await check.click();
-    assert.match(await page.locator('#daemon-result').textContent(), /1 to 65535/);
-    await page.locator('#daemon-port').fill('49386');
-    assert.equal(calls, 0);
-    await check.click();
-    await page.waitForFunction(() => document.querySelector('#daemon-result').textContent.includes('nb1 responded on port 49386'));
-    assert.equal(await page.locator('#daemon-debugger').getAttribute('href'), 'http://127.0.0.1:49386/demo/');
-    assert.equal(await page.locator('#daemon-debugger').getAttribute('target'), '_blank');
+    assert.match(await result.textContent(), /1 to 65535/);
+    assert.equal(await debuggerLink.getAttribute('href'), null);
+    await port.fill('49386');
+    assert.equal(await page.locator('#daemon-endpoint').textContent(), service);
+    assert.deepEqual(calls, []);
+    await port.press('Enter'); await expectText('1 online / 2 configured');
+    assert.deepEqual(calls, ['/v1/presence','/v1/service-status']);
+    assert.equal(await select.inputValue(), '49386');
+    assert.equal(await debuggerLink.getAttribute('href'), service+'/demo/');
+    assert.equal(await debuggerLink.getAttribute('target'), '_blank');
     assert.equal(await page.locator('#status').textContent(), hidError);
     assert.equal(await page.locator('#play').isDisabled(), true);
-    await page.locator('#daemon-port').fill('49385');
-    assert.equal(await page.locator('#daemon-result').textContent(), '');
-    assert.equal(await page.locator('#daemon-debugger').getAttribute('href'), null);
-    await page.locator('#daemon-port').fill('49386');
-    identity = false;
-    await page.locator('#options-daemon-help [data-daemon-check]').click();
-    await page.waitForFunction(() => document.querySelector('#daemon-result').textContent.includes('Could not confirm'));
-    await page.locator('#language').click();
-    assert.match(await page.locator('#daemon-result').textContent(), /未能确认端口 49386/);
-    await page.locator('#language').click();
-    assert.equal(calls, 2);
     assert.deepEqual(await page.evaluate(() => window.__softwareHID.reports), []);
-    checks.push('USB opening failure and port editing stay passive; two explicit read-only checks distinguish nb1 and an unrelated response without enabling Play');
+    await page.locator('#daemon-details').screenshot({path:path.join(output,'daemon-status-en.png')});
+    await page.locator('#language').click(); await expectText('1 台在线，共配置 2 台');
+    await page.setViewportSize({width:320,height:740});
+    const controls = await select.boundingBox();
+    assert.ok(controls.x>=0 && controls.x+controls.width<=320);
+    await page.locator('#daemon-details').screenshot({path:path.join(output,'daemon-status-zh-320.png')});
+    await page.setViewportSize({width:1366,height:900});
+    await page.locator('#language').click();
+    devices = {configured:2,online:0}; await check.click(); await expectText('0 online / 2 configured');
+    devices = {configured:0,online:0}; await check.click(); await expectText('No devices configured');
+    devices = null; await check.click(); await expectText('Device counts unavailable');
+    summaryBlocked = true; await check.click(); await expectText('Daemon present. Health and device counts unavailable');
+    presence = false; await check.click(); await expectText('Could not confirm');
+    assert.deepEqual(calls.slice(-3), ['/v1/presence','/v1/service-status','/v1/presence']);
+    const total = calls.length;
+    await page.reload({waitUntil:'networkidle'}); await waitReady(true);
+    await page.locator('#connection-options > summary').click();
+    assert.equal(await select.inputValue(), '49386');
+    assert.equal(await result.textContent(), '');
+    await select.selectOption('8931');
+    assert.equal(await page.locator('#daemon-endpoint').textContent(), 'http://127.0.0.1:8931');
+    await select.selectOption('49386');
+    assert.equal(await debuggerLink.getAttribute('href'), service+'/demo/');
+    assert.equal(calls.length, total);
+    checks.push('One user-selected loopback service, passive selection/reload, cached counts, legacy presence, unknown responses and EN/ZH mobile feedback; no USB commands');
   } finally {
     await page.unroute(fixture);
   }
@@ -367,7 +399,8 @@ try {
   }
   checks.push('All nine Actions compile and screen-play through the matched Go plan; contextual labels');
   await page.locator('#presets [data-kind="rainbow"]').click();
-  await page.locator('#param-period_ms').fill('3000'); await page.locator('#param-cycles').fill('1');
+  // Keep the preview active through Pause even on slow software-rendered CI.
+  await page.locator('#param-period_ms').fill('3000'); await page.locator('#param-cycles').fill('12');
   await page.locator('#preview').click();
   await page.waitForFunction(()=>+document.querySelector('[data-light-stage]').dataset.screenPreviewElapsed>100);
   const first = await stage();
