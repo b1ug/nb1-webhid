@@ -3,7 +3,7 @@ import {readFile} from 'node:fs/promises';
 import {createHash} from 'node:crypto';
 import * as THREE from '../../src/shared/nightlab/vendor/three/three.module.js';
 import {STLLoader} from '../../src/shared/nightlab/vendor/three/STLLoader.js';
-import {fitFrameToDiffuser} from '../../src/shared/nightlab/enclosure-fit.js';
+import {fitFrameToDiffuser} from '../../dist/web/shared/nightlab/enclosure-fit.js';
 
 // Independent geometry checks of the real, pinned assets. Raycaster below
 // intersects the returned triangles; it does not reuse the fitter's grid,
@@ -11,7 +11,7 @@ import {fitFrameToDiffuser} from '../../src/shared/nightlab/enclosure-fit.js';
 // establish a sampled visual joint and material occlusion, not manufacturing
 // or whole-surface accuracy. Internal mounting tabs may legitimately overlap
 // plastic; a hidden tab must not share its visible outer plane.
-const root = new URL('../../src/shared/nightlab/', import.meta.url);
+const root = new URL('../../dist/web/shared/nightlab/', import.meta.url);
 const source = JSON.parse(await readFile(new URL('model-assets/source.json', root), 'utf8'));
 const loader = new STLLoader();
 const sha = value => createHash('sha256').update(value).digest('hex');

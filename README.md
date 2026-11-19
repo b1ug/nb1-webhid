@@ -1,6 +1,8 @@
-# nb1 Browser Workbench
+# nb1 WebHID
 
-A development preview of nb1 Browser Workbench and the experimental nb1 Light Reminders Chrome extension for blink(1). Choose an Action, adjust its controls and play it from the website; the extension provides browser-triggered light reminders without installing the native nb1 client.
+A development preview of nb1 WebHID and the experimental nb1 Light Reminders Chrome extension for blink(1). Choose an Action, adjust its controls and play it from the website; the extension provides browser-triggered light reminders without installing the native nb1 client.
+
+The interactive 3D view ships [blink(1) Models](https://github.com/b1ug/blink1-models). The dependency lock pins the exact MK2 source archive. The build verifies the model manifest and copies its assets into the site for same-origin, offline use.
 
 **Development preview.** The website and source are separate from stable native nb1 releases. The extension is **Experimental**: closing its popup before a real-device reminder remains pending acceptance.
 

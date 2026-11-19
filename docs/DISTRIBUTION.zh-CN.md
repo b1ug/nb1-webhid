@@ -19,8 +19,8 @@
 使用 Git、Python 3、Node.js 22.12+，以及[编译器说明](COMPILER.md)指定的 Go 工具链。请使用经过审阅的固定提交；main 分支属于开发版本，不是稳定扩展发行。
 
 ~~~sh
-git clone https://github.com/b1ug/nb1-browser-tools.git
-cd nb1-browser-tools
+git clone https://github.com/b1ug/nb1-webhid.git
+cd nb1-webhid
 npm ci --ignore-scripts
 npm run build
 npm test
@@ -42,7 +42,7 @@ npm run serve
 - **dist/build.json**：源码提交、source_dirty、固定 Go 来源、工具链与逐文件字节数／SHA-256。
 - **dist/web/site-build.json**：公开开发预览的源码身份、已发布核心来源及网页文件哈希；不包含该清单自身、个人路径或实体设备验收记录。
 
-静态站点只部署 **dist/web/**。相对资源链接支持 `/nb1-browser-tools/` 这样的项目子路径。Pages 等待两个 Node 构建与软件浏览器检查通过，PR 不部署。公开源码和网页预览不代表实验扩展已成为稳定发行。
+静态站点只部署 **dist/web/**。相对资源链接支持 `/nb1-webhid/` 这样的项目子路径。Pages 等待两个 Node 构建与软件浏览器检查通过，PR 不部署。公开源码和网页预览不代表实验扩展已成为稳定发行。
 
 扩展 ZIP 还包含 **BUILD-INFO.json**、双语 README 与完整 **docs/**，可离线查看安装、隐私和恢复说明。BUILD-INFO.json 记录源码、开发状态、manifest 版本与编译器记录，不自我散列，也不宣称对包签名。下载页提供实际 ZIP 的 SHA256SUMS。
 

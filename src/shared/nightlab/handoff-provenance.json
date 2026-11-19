@@ -117,12 +117,12 @@
       "handoff_path": "demo/vendor/three/OrbitControls.js"
     },
     "model-reference.html": {
-      "sha256": "d7bd813b60b67679180aff55f74cf88e3e6cfa15ede9dab5c16a05329e61ee55",
-      "bytes": 3076
+      "sha256": "643da4878ff9ea93bda509f8bac98c3ee85d018dcef17e3ff4bf1ce2ce6ce6f6",
+      "bytes": 3040
     },
     "model-reference.js": {
-      "sha256": "b97506abc8e95417e9ea7af2e3b5c4baac79a182868a081e4a9103095334de99",
-      "bytes": 4036
+      "sha256": "8385d87339a9e7e0423a0db4fd0539e5f7ab453af168b5ef7c29415e23aaebd5",
+      "bytes": 3996
     }
   },
   "adaptations": [
@@ -169,5 +169,11 @@
   },
   "public_export_note": "Public source keeps approved artwork, original CAD/licenses and rendering code. Internal screenshots, device receipts, project-note excerpts and private source paths remain outside this repository.",
   "public_metadata_adaptation": "Only the faceMappingSource attribution string in light-model.js is replaced with a public source note; geometry, shaders and channel mapping retain their approved behavior.",
-  "public_mobile_correction": "At the existing one-column breakpoint, reset the composer to grid-column 1 so the preview sidebar does not collapse into a zero-width implicit column. Tokens, fonts, model and shader code are preserved."
+  "public_mobile_correction": "At the existing one-column breakpoint, reset the composer to grid-column 1 so the preview sidebar does not collapse into a zero-width implicit column. Tokens, fonts, model and shader code are preserved.",
+  "model_package": {
+    "repository": "https://github.com/b1ug/blink1-models",
+    "version": "0.1.0",
+    "manifest_sha256": "8da04a0b8af074ad9f559921bd19c3a2fe0e6522d479012c3373b95d383bf38a",
+    "commit": "dc531ccaa88e031faf6c0cd32e0102d9a18e9b8d"
+  }
 }

@@ -42,7 +42,7 @@ test('shared color sets are immutable authoring suggestions with independent edi
 
 test('approved Nightlab tokens, viewer geometry, CAD, and licenses retain delivered bytes', async () => {
   for (const name of ['airwave-tokens.css', 'studio.css', 'studio-skins.css', 'studio-appearance.js', 'preview-timeline.js', 'light-model.js', 'enclosure-fit.js', ...Object.keys(receipt.source_files).filter(name=>/^(model-assets|vendor\/three)\//.test(name))]) {
-    const bytes = await readFile(new URL(name, nightlab));
+    const bytes = await readFile(new URL('dist/web/shared/nightlab/' + name, root));
     assert.equal(digest(bytes), receipt.source_files[name].sha256, name);
   }
   for (const [name, value] of Object.entries(receipt.browser_styles)) assert.equal(digest(await readFile(new URL('src/web/'+name, root))), value.sha256, name);

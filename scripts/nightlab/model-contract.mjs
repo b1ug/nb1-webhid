@@ -4,11 +4,11 @@ import {readFileSync} from 'node:fs';
 import {createHash} from 'node:crypto';
 import * as THREE from '../../src/shared/nightlab/vendor/three/three.module.js';
 import {STLLoader} from '../../src/shared/nightlab/vendor/three/STLLoader.js';
-import {createBlink1Model} from '../../src/shared/nightlab/light-model.js';
+import {createBlink1Model} from '../../dist/web/shared/nightlab/light-model.js';
 function modelContract(){
   const loader=new STLLoader();
   const load=name=>{
-    const bytes=readFileSync(new URL('../../src/shared/nightlab/model-assets/'+name,import.meta.url));
+    const bytes=readFileSync(new URL('../../dist/web/shared/nightlab/model-assets/'+name,import.meta.url));
     return loader.parse(bytes.buffer.slice(bytes.byteOffset,bytes.byteOffset+bytes.byteLength));
   };
   const diffuserGeometry=load('blink1mk2_enclosure_diffuser_v3k.stl'),frameGeometry=load('blink1mk2_enclosure_frame_v3k.stl');
