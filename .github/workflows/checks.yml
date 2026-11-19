@@ -22,7 +22,7 @@ jobs:
       GOTOOLCHAIN: local
       GID_TEST_ENUMERATE: "0"
       GID_TEST_DEVICE_PATH: ""
-      NB1_BROWSER_TEST_MOUNT: /nb1-browser-tools/
+      NB1_BROWSER_TEST_MOUNT: /nb1-webhid/
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:

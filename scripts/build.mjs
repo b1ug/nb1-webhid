@@ -1,3 +1,4 @@
+import { stageModel } from '@b1ug/blink1-models/stage';
 import fs from 'node:fs/promises';
 import path from 'node:path';
 import crypto from 'node:crypto';
@@ -40,6 +41,8 @@ for(const kind of ['web','extension']){
   if(kind==='web'){
     await fs.copyFile(path.join(root,'src/shared/player.js'),path.join(target,'shared/player.js'));
     await fs.cp(path.join(root,'src/shared/nightlab'),path.join(target,'shared/nightlab'),{recursive:true});
+    const modelReceipt = JSON.parse(await fs.readFile(path.join(target, 'shared/nightlab/handoff-provenance.json'), 'utf8'));
+    await stageModel(path.join(target, 'shared/nightlab'), modelReceipt.model_package.manifest_sha256);
   }
   await fs.mkdir(path.join(target,'shared/compiler'),{recursive:true});
   for(const name of runtimeFiles){
@@ -93,7 +96,7 @@ async function publicFiles(directory){
 }
 await publicFiles(webRoot);
 const siteBuild={schema_version:1,artifact_kind:'nb1-browser-development-preview',
-  source:{repository:'https://github.com/b1ug/nb1-browser-tools',commit:source,dirty},
+  source:{repository:'https://github.com/b1ug/nb1-webhid',commit:source,dirty},
   core:{repository:'https://github.com/b1ug/nb1',version:'v0.1.1',source_commit:compilerReceipt.source_commit},
   channel:'development-preview',extension:{name:extensionManifest.name,status:'experimental',version:extensionManifest.version,hardware_qualified:false},
   compiler:{go_version:compilerReceipt.go_version,wasm_sha256:compilerReceipt.files['nb1.wasm'].sha256},

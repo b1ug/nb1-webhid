@@ -19,8 +19,8 @@ These are separate device owners. Stop or disconnect one before connecting the n
 Use Git, Python 3, Node.js 22.12+ and the Go toolchain specified in [compiler notes](COMPILER.md). Use the reviewed source commit; the main branch is a development line, not a stable extension release.
 
 ~~~sh
-git clone https://github.com/b1ug/nb1-browser-tools.git
-cd nb1-browser-tools
+git clone https://github.com/b1ug/nb1-webhid.git
+cd nb1-webhid
 npm ci --ignore-scripts
 npm run build
 npm test
@@ -42,7 +42,7 @@ The build creates:
 - **dist/build.json** — source commit, source_dirty, pinned Go source, toolchain and per-file byte counts / SHA-256.
 - **dist/web/site-build.json** — public development-preview identity, released core source and hashes of every website payload file except this manifest itself. It contains no local filesystem paths or physical-device receipts.
 
-Publish only **dist/web/** as the static website. Asset links are relative and support a project subpath such as `/nb1-browser-tools/`. Pages deployment waits for both Node builds and the software browser checks; pull requests never deploy. Source publication and preview hosting do not make the experimental extension a stable release.
+Publish only **dist/web/** as the static website. Asset links are relative and support a project subpath such as `/nb1-webhid/`. Pages deployment waits for both Node builds and the software browser checks; pull requests never deploy. Source publication and preview hosting do not make the experimental extension a stable release.
 
 The extension ZIP also carries **BUILD-INFO.json**, both READMEs and the complete **docs/** directory for offline installation, privacy and recovery guidance. BUILD-INFO.json identifies the source, development status, manifest version and compiler receipt; it does not hash itself or claim to sign the package. The download page supplies SHA256SUMS for the actual ZIP.
 

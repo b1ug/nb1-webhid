@@ -5,7 +5,7 @@ import {SequencePlayer} from './shared/player.js';
 const $ = id => document.getElementById(id);
 const messages = {
   en: {
-    skip:'Skip to workbench', browserWorkbench:'Browser workbench', source:'Source',
+    skip:'Skip to workbench', browserWorkbench:'WebHID', source:'Source',
     headline:'Workbench', intro:'Choose an Action, make it yours, and press Play.',
     yourLight:'Your light', connect:'Connect blink(1)', disconnect:'Disconnect', connectionOptions:'Connection options',
     ownership:'Stop the native nb1 daemon or other controllers using this light before connecting here.',
@@ -74,7 +74,7 @@ const messages = {
   },
   'zh-CN': {
     bothSame:'两灯同色', separateLEDs:'两灯分色',
-    skip:'跳到工作台', browserWorkbench:'浏览器工作台', source:'源码',
+    skip:'跳到工作台', browserWorkbench:'WebHID', source:'源码',
     headline:'工作台', intro:'选个动作，调好参数，直接播放。',
     yourLight:'你的小灯', connect:'连接 blink(1)', disconnect:'断开连接', connectionOptions:'连接选项',
     ownership:'连接前，请先停止正在使用这只灯的 nb1 daemon 或其他控制器。',
@@ -409,7 +409,7 @@ function useAction(kind) {
   selectedKind=kind;mode='action';replaceDraft(formRequest());renderFields();
 }
 function applyLanguage() {
-  document.documentElement.lang=language;document.title=language==='en'?'nb1 · Browser workbench':'nb1 · 浏览器工作台';
+  document.documentElement.lang=language;document.title='nb1 WebHID';
   for(const node of document.querySelectorAll('[data-i18n]'))node.textContent=t(node.dataset.i18n);
   $('language').textContent=language==='en'?'中文':'EN';$('language').setAttribute('aria-label',language==='en'?'Switch to Chinese':'切换为英文');
   document.querySelector('[data-i18n="extensionPlan"]').href=language==='en'?'./extension-plan.md':'./extension-plan.zh-CN.md';

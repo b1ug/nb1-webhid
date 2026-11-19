@@ -1,6 +1,6 @@
-# nb1 browser tools
+# nb1 WebHID
 
-- This is the clean public-source candidate for b1ug/nb1-browser-tools. Publishing and Pages activation are handled separately; preserve the original private repository history.
+- b1ug/nb1-webhid publishes the browser controller and packages the experimental Light Reminders extension. Keep each product’s permission and hardware qualification separate.
 - The product is nb1; blink(1) is the hardware. B-3 is only an internal artwork selection identifier, never a public name. Use only the approved production icon and mascot assets.
 - Public UI and developer documentation are English by default, with explicit Chinese selection and an extensible locale catalog. Preserve JSON, user content, IDs, and canonical API values when switching languages.
 - Share the pinned Go compiler; do not rewrite color mathematics or Action recipes in JavaScript. Use Action, Sequence, Step and Pattern terminology.
