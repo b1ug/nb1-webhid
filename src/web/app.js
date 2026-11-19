@@ -47,7 +47,7 @@ const messages = {
     errorPrefix:'Could not finish:',
     openFailed:'The browser could not open blink(1). Check device permission or whether another controller is using this light.',
     checkDaemon:'Check status', daemonService:'Local nb1 service', daemonPort:'Port', openDebugger:'Open local debugger',
-    daemonDefault:'Default · 8931', daemonCustom:'Other port…',
+    daemonDefault:'Default · {port}', daemonCustom:'Other port…',
     daemonChecking:'Checking local nb1…', daemonInvalid:'Enter a port from 1 to 65535.',
     daemonHealthy:'Daemon healthy.', daemonDevices:'Device cache: {online} online / {configured} configured.',
     daemonNoDevices:'No devices configured.', daemonNoCache:'Device counts unavailable.',
@@ -118,7 +118,7 @@ const messages = {
     draftRaced:'编译过程中草稿发生变化，请对当前草稿重新播放、预览或导出。',
     errorPrefix:'未能完成：', openFailed:'浏览器未能打开 blink(1)。请检查设备权限，或看看其他控制器是否正在使用这只灯。',
     checkDaemon:'检查状态', daemonService:'本机 nb1 服务', daemonPort:'端口', openDebugger:'打开本机调试器',
-    daemonDefault:'默认 · 8931', daemonCustom:'其他端口…',
+    daemonDefault:'默认 · {port}', daemonCustom:'其他端口…',
     daemonChecking:'正在检查本机 nb1…', daemonInvalid:'请输入 1 到 65535 之间的端口。',
     daemonHealthy:'服务健康。', daemonDevices:'设备缓存：{online} 台在线，共配置 {configured} 台。',
     daemonNoDevices:'尚未配置设备。', daemonNoCache:'暂时无法读取设备数量。',
@@ -198,19 +198,22 @@ function errorText(error) {
   const key={open_failed:'openFailed',not_connected:'notConnected',outcome_unknown:'outcomeUnknown',timing_overrun:'timingOverrun',connection_changed:'connectionChanged'}[error?.code];
   return key?t(key):error?.message||String(error);
 }
-const defaultPort = '8931';
+const defaultPort = '5885';
 const serviceKey = 'nb1.webhid.local-service';
 const serviceSelect = $('daemon-service');
 const portInput = $('daemon-port');
 let recentPorts = [];
-let chosenPort = defaultPort;
+let pinnedPort = '';
 let daemonRequest = null;
 let daemonResult = null;
 try {
   const saved = localStorage.getItem(serviceKey);
   if (saved && saved.length <= 256) {
     const prefs = JSON.parse(saved);
-    if (daemonOrigin(prefs.port)) chosenPort = String(Number(prefs.port));
+    // Older records stored only a port, so preserve it for mixed-version installations.
+    // New records distinguish following the default from entering a specific port.
+    const savedPort = prefs.choice ?? prefs.port;
+    if (daemonOrigin(savedPort)) pinnedPort = String(Number(savedPort));
     if (Array.isArray(prefs.recent)) {
       const ports = prefs.recent.filter(port => daemonOrigin(port)).map(port => String(Number(port)));
       recentPorts = [...new Set(ports)].filter(port => port !== defaultPort).slice(0, 4);
@@ -225,21 +228,25 @@ function selectedPort() {
 function saveService(confirmed = false) {
   const value = selectedPort();
   if (!daemonOrigin(value)) return;
-  chosenPort = String(Number(value));
-  if (confirmed && chosenPort !== defaultPort) {
-    recentPorts = [chosenPort, ...recentPorts.filter(port => port !== chosenPort)].slice(0, 4);
+  pinnedPort = serviceSelect.value === defaultPort ? '' : String(Number(value));
+  if (confirmed && pinnedPort && pinnedPort !== defaultPort) {
+    recentPorts = [pinnedPort, ...recentPorts.filter(port => port !== pinnedPort)].slice(0, 4);
   }
-  try { localStorage.setItem(serviceKey, JSON.stringify({port:chosenPort, recent:recentPorts})); } catch {}
+  try { localStorage.setItem(serviceKey, JSON.stringify({choice:pinnedPort || 'default', recent:recentPorts})); } catch {}
+}
+function savedServiceChoice() {
+  if (!pinnedPort) return defaultPort;
+  return recentPorts.includes(pinnedPort) ? pinnedPort : 'custom';
 }
 
 function serviceOptions(value) {
-  serviceSelect.replaceChildren(new Option(t('daemonDefault'), defaultPort));
+  serviceSelect.replaceChildren(new Option(t('daemonDefault').replace('{port}', defaultPort), defaultPort));
   for (const port of recentPorts) serviceSelect.add(new Option(t('daemonPort') + ' ' + port, port));
   serviceSelect.add(new Option(t('daemonCustom'), 'custom'));
   serviceSelect.value = value;
 }
-portInput.value = chosenPort === defaultPort ? '' : chosenPort;
-serviceOptions(chosenPort === defaultPort || recentPorts.includes(chosenPort) ? chosenPort : 'custom');
+portInput.value = pinnedPort;
+serviceOptions(savedServiceChoice());
 
 function renderDaemon() {
   const custom = serviceSelect.value === 'custom';
@@ -309,7 +316,7 @@ async function checkDaemon(event) {
   daemonResult = {...result, checkedAt:new Date()};
   if (['present', 'healthy'].includes(result.state)) {
     saveService(true);
-    serviceOptions(chosenPort);
+    serviceOptions(savedServiceChoice());
   }
   renderDaemon();
 }

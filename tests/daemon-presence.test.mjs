@@ -9,7 +9,7 @@ const origin = 'http://127.0.0.1:8932';
 
 test('checks accept only a single numeric loopback port', async t => {
   const network = t.mock.method(globalThis, 'fetch', () => { throw Error('Unexpected fetch'); });
-  for (const value of ['', '0', '65536', '-1', '89.31', '1e3', '127.0.0.1:8931', 'example.com', '8931/other']) {
+  for (const value of ['', '0', '65536', '-1', '89.31', '1e3', '127.0.0.1:5885', 'example.com', '5885/other']) {
     assert.equal(daemonOrigin(value), null);
     assert.deepEqual(await probeDaemon(value, signal), {state:'unconfirmed'});
   }
