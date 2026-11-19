@@ -97,9 +97,9 @@ async function daemonDiagnostics() {
     await page.waitForSelector('#open-daemon-help:not([hidden])');
     const hidError = await page.locator('#status').textContent();
     assert.match(hidError, /could not open/);
-    assert.equal(await select.inputValue(), '8931');
+    assert.equal(await select.inputValue(), '5885');
     assert.equal(await port.isVisible(), false);
-    assert.equal(await debuggerLink.getAttribute('href'), 'http://127.0.0.1:8931/demo/');
+    assert.equal(await debuggerLink.getAttribute('href'), 'http://127.0.0.1:5885/demo/');
     await select.selectOption('custom');
     await port.fill('65536');
     await check.click();
@@ -135,10 +135,34 @@ async function daemonDiagnostics() {
     await page.locator('#connection-options > summary').click();
     assert.equal(await select.inputValue(), '49386');
     assert.equal(await result.textContent(), '');
-    await select.selectOption('8931');
-    assert.equal(await page.locator('#daemon-endpoint').textContent(), 'http://127.0.0.1:8931');
+    const key = 'nb1.webhid.local-service';
+    const savedChoice = () => page.evaluate(key=>JSON.parse(localStorage.getItem(key)).choice, key);
+    await select.selectOption('5885');
+    assert.equal(await savedChoice(), 'default');
+    assert.equal(await page.locator('#daemon-endpoint').textContent(), 'http://127.0.0.1:5885');
     await select.selectOption('49386');
+    assert.equal(await savedChoice(), '49386');
     assert.equal(await debuggerLink.getAttribute('href'), service+'/demo/');
+    assert.equal(calls.length, total);
+
+    // Preserve every saved legacy port: the old schema did not record how it was selected.
+    for (const [prefs, expected, custom] of [
+      [{port:'8931', recent:['49386']}, 'custom', '8931'],
+      [{recent:['49386']}, '5885', null],
+      [{port:'49386', recent:['49386']}, '49386', null],
+      [{port:'8932', recent:[]}, 'custom', '8932'],
+      [{choice:'default', recent:['49386']}, '5885', null],
+      [{choice:'8931', recent:[]}, 'custom', '8931'],
+      [{choice:'5885', recent:[]}, 'custom', '5885'],
+    ]) {
+      await page.evaluate(([key,prefs])=>localStorage.setItem(key,JSON.stringify(prefs)),[key,prefs]);
+      await page.reload({waitUntil:'domcontentloaded'});
+      await page.waitForFunction(()=>document.querySelector('#daemon-service option[value="custom"]') &&
+        document.querySelector('#daemon-endpoint').textContent !== '');
+      assert.equal(await select.inputValue(), expected);
+      if (custom) assert.equal(await port.inputValue(), custom);
+      assert.equal(await result.textContent(), '');
+    }
     assert.equal(calls.length, total);
     checks.push('One user-selected loopback service, passive selection/reload, cached counts, legacy presence, unknown responses and EN/ZH mobile feedback; no USB commands');
   } finally {
