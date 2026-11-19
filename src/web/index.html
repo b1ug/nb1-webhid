@@ -2,7 +2,7 @@
 <html lang="en" data-nb1-app="browser">
 <head>
   <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-  <meta http-equiv="Content-Security-Policy" content="default-src 'self';script-src 'self' 'wasm-unsafe-eval';style-src 'self' 'unsafe-inline';img-src 'self' data:;connect-src 'self';object-src 'none';base-uri 'none';form-action 'none'">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self';script-src 'self' 'wasm-unsafe-eval';style-src 'self' 'unsafe-inline';img-src 'self' data:;connect-src 'self' http://127.0.0.1:*/v1/presence http://127.0.0.1:*/v1/service-status;object-src 'none';base-uri 'none';form-action 'none'">
   <title>nb1 WebHID</title>
   <meta name="description" content="Choose an Action and play blink(1) directly from your browser with the shared nb1 Go compiler.">
   <link rel="icon" href="./shared/assets/nb1-icon.png"><link rel="stylesheet" href="./shared/theme.css"><link rel="stylesheet" href="./shared/vendor/json-editor.css"><link rel="stylesheet" href="./style.css">
@@ -30,13 +30,26 @@
       <section class="play-stage" aria-label="Playback">
         <div class="play-controls"><div class="play-actions"><button id="preview" type="button" class="secondary" disabled data-i18n="preview">Preview without playing</button><button id="play" class="primary" type="button" disabled data-i18n="play">Play</button><button id="stop" class="secondary" type="button" disabled data-i18n="stop">Stop</button><button id="off" class="danger" type="button" disabled data-i18n="off">Off</button></div><p id="play-state" class="play-state" role="status" aria-live="polite"></p></div><progress id="play-progress" value="0" max="1" hidden></progress>
         <div id="status" class="notice" role="status" aria-live="polite">Choose an Action. Play compiles and checks it before sending.</div>
+        <div id="open-daemon-help" class="daemon-help" hidden></div>
       </section>
     </div>
   </section>
   <aside class="studio-sidebar" aria-label="Light and connection">
   <section class="card device-bar" aria-labelledby="device-title">
     <div class="device-main"><div class="device-label"><h2 id="device-title" data-type-role="heading" data-i18n="yourLight">Your light</h2><span class="badge" id="connection" role="status">Not connected</span><span class="meta" id="device-info">—</span></div><div class="row device-actions"><button id="connect" type="button" disabled data-i18n="connect">Connect blink(1)</button><button id="disconnect" class="secondary" type="button" disabled data-i18n="disconnect">Disconnect</button></div></div>
-    <details id="connection-options"><summary data-i18n="connectionOptions">Connection options</summary><p class="meta" data-i18n="ownership">Stop the native nb1 daemon or other controllers using this light before connecting here.</p><label class="checkbox"><input id="ownership" type="checkbox"><span data-i18n="ownershipCheck">I have stopped other controllers for this light.</span></label><p id="hid-support" class="footnote"></p><p class="footnote" data-i18n="disconnectNote">Disconnect keeps the last color. Use Off to turn the light dark. No device storage is written.</p></details>
+    <details id="connection-options"><summary data-i18n="connectionOptions">Connection options</summary><p class="meta" data-i18n="ownership">Stop the native nb1 daemon or other controllers using this light before connecting here.</p><label class="checkbox"><input id="ownership" type="checkbox"><span data-i18n="ownershipCheck">I have stopped other controllers for this light.</span></label><p id="hid-support" class="footnote"></p>
+      <div id="options-daemon-help" class="daemon-help">
+        <form id="daemon-details">
+          <label for="daemon-service" data-i18n="daemonService">Local nb1 service</label>
+          <div class="daemon-controls">
+            <select id="daemon-service"><option value="8931">Default · 8931</option><option value="custom">Other port…</option></select>
+            <label id="daemon-custom" hidden><span data-i18n="daemonPort">Port</span><input id="daemon-port" aria-describedby="daemon-result" type="text" inputmode="numeric" autocomplete="off" spellcheck="false"></label>
+            <button type="submit" class="secondary" data-daemon-check data-i18n="checkDaemon">Check status</button>
+          </div>
+          <div class="daemon-address"><code id="daemon-endpoint"></code><a id="daemon-debugger" target="_blank" rel="noopener noreferrer" referrerpolicy="no-referrer" data-i18n="openDebugger" hidden>Open local debugger</a></div>
+          <p id="daemon-result" class="meta" role="status" aria-live="polite" aria-atomic="true"></p>
+        </form>
+      </div><p class="footnote" data-i18n="disconnectNote">Disconnect keeps the last color. Use Off to turn the light dark. No device storage is written.</p></details>
   </section>
   <section class="light-stage" data-light-stage data-i18n-skip aria-label="Light object, screen study"></section>
   </aside>

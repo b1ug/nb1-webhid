@@ -1,5 +1,6 @@
 import {loadCompiler, callCompiler} from './shared/compiler-loader.js';
 import {Blink1WebHID} from './shared/transport.js';
+import {daemonOrigin, probeDaemon} from './daemon-presence.js';
 import {SequencePlayer} from './shared/player.js';
 
 const $ = id => document.getElementById(id);
@@ -44,7 +45,15 @@ const messages = {
     inputTooLarge:'The request file must be at most 1 MiB.',
     draftRaced:'The draft changed while compiling. Use Play, Preview or Export again for the current draft.',
     errorPrefix:'Could not finish:',
-    openFailed:'The browser could not open blink(1). Stop the native nb1 daemon or disconnect other controllers using this light, then choose it again. If opening still fails, check the browser device permission. No light command was sent.',
+    openFailed:'The browser could not open blink(1). Check device permission or whether another controller is using this light.',
+    checkDaemon:'Check status', daemonService:'Local nb1 service', daemonPort:'Port', openDebugger:'Open local debugger',
+    daemonDefault:'Default · 8931', daemonCustom:'Other port…',
+    daemonChecking:'Checking local nb1…', daemonInvalid:'Enter a port from 1 to 65535.',
+    daemonHealthy:'Daemon healthy.', daemonDevices:'Device cache: {online} online / {configured} configured.',
+    daemonNoDevices:'No devices configured.', daemonNoCache:'Device counts unavailable.',
+    daemonPresent:'Daemon present. Health and device counts unavailable.',
+    daemonUnknown:'Could not confirm nb1. Check the port and browser permission, or open the debugger for older versions.',
+    daemonTime:'Last checked {time}.',
     notConnected:'Connect your blink(1) before playing.',
     outcomeUnknown:'The device outcome is unknown. No automatic retry was made. Disconnect and check the light before reconnecting.',
     timingOverrun:'Playback stopped because the browser could not keep the timing. Keep this page visible and play again.',
@@ -107,7 +116,15 @@ const messages = {
     exporting:'正在编译可移植的 Sequence…', exportDone:'已导出 light.sequence.json，灯光未改变。',
     importDone:'已导入为自定义 JSON，播放前会先校验。', inputTooLarge:'请求文件不能超过 1 MiB。',
     draftRaced:'编译过程中草稿发生变化，请对当前草稿重新播放、预览或导出。',
-    errorPrefix:'未能完成：', openFailed:'浏览器未能打开 blink(1)。请先停止使用这只灯的 nb1 daemon，或断开其他控制器，再重新选择设备。如果仍然失败，再检查浏览器的设备授权。本次没有发送灯光指令。',
+    errorPrefix:'未能完成：', openFailed:'浏览器未能打开 blink(1)。请检查设备权限，或看看其他控制器是否正在使用这只灯。',
+    checkDaemon:'检查状态', daemonService:'本机 nb1 服务', daemonPort:'端口', openDebugger:'打开本机调试器',
+    daemonDefault:'默认 · 8931', daemonCustom:'其他端口…',
+    daemonChecking:'正在检查本机 nb1…', daemonInvalid:'请输入 1 到 65535 之间的端口。',
+    daemonHealthy:'服务健康。', daemonDevices:'设备缓存：{online} 台在线，共配置 {configured} 台。',
+    daemonNoDevices:'尚未配置设备。', daemonNoCache:'暂时无法读取设备数量。',
+    daemonPresent:'已确认服务运行，健康状态和设备数量未知。',
+    daemonUnknown:'未能确认 nb1。请核对端口和浏览器权限，旧版可直接打开调试器。',
+    daemonTime:'上次检查 {time}。',
     notConnected:'请先连接 blink(1)，再开始播放。',
     outcomeUnknown:'设备执行结果未知，未自动重试。请断开并检查灯的状态，再重新连接。',
     timingOverrun:'浏览器未能保持要求的时序，播放已停止。请保持此页面可见，再次手动播放。',
@@ -181,7 +198,131 @@ function errorText(error) {
   const key={open_failed:'openFailed',not_connected:'notConnected',outcome_unknown:'outcomeUnknown',timing_overrun:'timingOverrun',connection_changed:'connectionChanged'}[error?.code];
   return key?t(key):error?.message||String(error);
 }
+const defaultPort = '8931';
+const serviceKey = 'nb1.webhid.local-service';
+const serviceSelect = $('daemon-service');
+const portInput = $('daemon-port');
+let recentPorts = [];
+let chosenPort = defaultPort;
+let daemonRequest = null;
+let daemonResult = null;
+try {
+  const saved = localStorage.getItem(serviceKey);
+  if (saved && saved.length <= 256) {
+    const prefs = JSON.parse(saved);
+    if (daemonOrigin(prefs.port)) chosenPort = String(Number(prefs.port));
+    if (Array.isArray(prefs.recent)) {
+      const ports = prefs.recent.filter(port => daemonOrigin(port)).map(port => String(Number(port)));
+      recentPorts = [...new Set(ports)].filter(port => port !== defaultPort).slice(0, 4);
+    }
+  }
+} catch { /* Storage is optional. */ }
+
+function selectedPort() {
+  return serviceSelect.value === 'custom' ? portInput.value : serviceSelect.value;
+}
+
+function saveService(confirmed = false) {
+  const value = selectedPort();
+  if (!daemonOrigin(value)) return;
+  chosenPort = String(Number(value));
+  if (confirmed && chosenPort !== defaultPort) {
+    recentPorts = [chosenPort, ...recentPorts.filter(port => port !== chosenPort)].slice(0, 4);
+  }
+  try { localStorage.setItem(serviceKey, JSON.stringify({port:chosenPort, recent:recentPorts})); } catch {}
+}
+
+function serviceOptions(value) {
+  serviceSelect.replaceChildren(new Option(t('daemonDefault'), defaultPort));
+  for (const port of recentPorts) serviceSelect.add(new Option(t('daemonPort') + ' ' + port, port));
+  serviceSelect.add(new Option(t('daemonCustom'), 'custom'));
+  serviceSelect.value = value;
+}
+portInput.value = chosenPort === defaultPort ? '' : chosenPort;
+serviceOptions(chosenPort === defaultPort || recentPorts.includes(chosenPort) ? chosenPort : 'custom');
+
+function renderDaemon() {
+  const custom = serviceSelect.value === 'custom';
+  $('daemon-custom').hidden = !custom;
+  const origin = daemonOrigin(selectedPort());
+  $('daemon-endpoint').textContent = origin || '';
+  const debuggerLink = $('daemon-debugger');
+  debuggerLink.hidden = !origin;
+  if (origin) debuggerLink.href = origin + '/demo/';
+  else debuggerLink.removeAttribute('href');
+
+  const space = language === 'en' ? ' ' : '';
+  let message = '';
+  const state = daemonResult?.state;
+  if (state === 'healthy') {
+    const counts = daemonResult.devices;
+    const devices = !counts ? t('daemonNoCache') : counts.configured === 0 ? t('daemonNoDevices') :
+      t('daemonDevices').replace('{online}', counts.online).replace('{configured}', counts.configured);
+    message = t('daemonHealthy') + space + devices;
+  } else if (state) {
+    message = t({present:'daemonPresent', unconfirmed:'daemonUnknown', invalid:'daemonInvalid', checking:'daemonChecking'}[state]);
+  }
+  if (daemonResult?.checkedAt) {
+    const time = daemonResult.checkedAt.toLocaleTimeString(language, {hour:'2-digit', minute:'2-digit', second:'2-digit'});
+    message += space + t('daemonTime').replace('{time}', time);
+  }
+  if ($('daemon-result').textContent !== message) $('daemon-result').textContent = message;
+  portInput.setAttribute('aria-invalid', String(state === 'invalid'));
+  document.querySelector('[data-daemon-check]').disabled = Boolean(daemonRequest);
+}
+function clearDaemon() {
+  daemonRequest?.abort();
+  daemonRequest = null;
+  daemonResult = null;
+  renderDaemon();
+}
+serviceSelect.addEventListener('change', () => {
+  clearDaemon();
+  if (serviceSelect.value === 'custom') portInput.focus();
+  else saveService();
+});
+portInput.addEventListener('input', clearDaemon);
+portInput.addEventListener('change', () => saveService());
+window.addEventListener('pagehide', clearDaemon);
+
+async function checkDaemon(event) {
+  event.preventDefault();
+  if (daemonRequest) return;
+  const port = selectedPort();
+  if (!daemonOrigin(port)) {
+    daemonResult = {state:'invalid'};
+    renderDaemon();
+    portInput.focus();
+    return;
+  }
+  saveService();
+  const request = new AbortController();
+  daemonRequest = request;
+  daemonResult = {state:'checking'};
+  renderDaemon();
+  const timeout = setTimeout(() => request.abort(), 8000);
+  let result;
+  try { result = await probeDaemon(port, request.signal); }
+  finally { clearTimeout(timeout); request.abort(); }
+  if (daemonRequest !== request) return;
+  daemonRequest = null;
+  daemonResult = {...result, checkedAt:new Date()};
+  if (['present', 'healthy'].includes(result.state)) {
+    saveService(true);
+    serviceOptions(chosenPort);
+  }
+  renderDaemon();
+}
+$('daemon-details').addEventListener('submit', checkDaemon);
+
 function renderNotice() {
+  const failure = notice.error?.code === 'open_failed';
+  const help = $('open-daemon-help');
+  if (help.hidden === failure) {
+    help.hidden = !failure;
+    (failure ? help : $('options-daemon-help')).append($('daemon-details'));
+  }
+  renderDaemon();
   $('status').textContent=notice.error?errorText(notice.error):t(notice.key);
   $('status').hidden=!notice.error&&['initialStatus','changed','customStatus','previewReady','exportDone','importDone','connectedStatus','completedStatus','stoppedStatus','offSent'].includes(notice.key);
   $('status').setAttribute('aria-live',notice.error?'polite':'off');
@@ -410,6 +551,7 @@ function useAction(kind) {
 }
 function applyLanguage() {
   document.documentElement.lang=language;document.title='nb1 WebHID';
+  serviceOptions(serviceSelect.value);
   for(const node of document.querySelectorAll('[data-i18n]'))node.textContent=t(node.dataset.i18n);
   $('language').textContent=language==='en'?'中文':'EN';$('language').setAttribute('aria-label',language==='en'?'Switch to Chinese':'切换为英文');
   document.querySelector('[data-i18n="extensionPlan"]').href=language==='en'?'./extension-plan.md':'./extension-plan.zh-CN.md';

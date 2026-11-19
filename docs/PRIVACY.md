@@ -10,7 +10,11 @@ The website keeps the explicitly selected language in localStorage under its own
 
 The packaged website has no analytics, account, remote font, runtime CDN, PWA service worker or automatic task monitoring. Its local server serves static files on loopback. Source links and official documentation links open outside resources only when you follow them; browser/network software may have its own independent traffic.
 
-Closing a page does not clear its browser permission or turn the light off. Clear site data to remove its language choice; remove the origin's HID permission in Chrome settings to revoke future access.
+**Check status** contacts only the selected service at `http://127.0.0.1:<port>`. It reads `/v1/presence` first. Only a matching nb1 identity triggers a second GET to `/v1/service-status` on that port. The combined deadline is eight seconds. Both requests omit credentials and referrer, reject redirects, and accept bounded JSON records. A successful summary includes service health and aggregate counts from the daemon’s device cache. A missing summary can still confirm presence. Chrome may ask for loopback or local network permission separately from USB permission. The debugger link opens the selected service directly.
+
+Selecting a service, opening the website or opening the USB chooser starts no probe. The site remembers the selected port and up to four recently confirmed non-default ports in localStorage. Health, counts and the time of the last check stay in page memory. These checks send no serials or drafts and make no hardware or playback requests.
+
+Closing a page does not clear its browser permission or turn the light off. Clear site data to remove language and port preferences. Remove the origin’s HID permission in Chrome settings to revoke future access.
 
 ## Extension
 
