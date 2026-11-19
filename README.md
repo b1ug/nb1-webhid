@@ -36,7 +36,7 @@ The extension manifest version is `0.1.0`, a development identifier rather than 
 
 The site starts in English and offers an explicit Chinese switch. Device selection is never automatic. Stop other controllers before granting this page or the extension access to the same light. No native helper is required for WebHID, but browser and operating-system device permissions still apply.
 
-If Chrome reports **Failed to open the device**, check which controller owns the light. Stop the native daemon or disconnect the other website/extension first, then choose the device again. The ownership checkbox is an acknowledgement; it cannot stop another process. If opening still fails, check Chrome's device permission. An open failure sends no light command and does not retry automatically. To return to native nb1, disconnect the browser controller before explicitly starting the daemon again.
+If Chrome reports **Failed to open the device**, select **Check local nb1** next to the error or under **Connection options**. Use your daemon’s port (default `8931`). A successful check confirms that nb1 responded at that port. Open its debugger to inspect the lights it manages. If the check is inconclusive, verify the port and browser permission or open the local debugger directly. Released nb1 v0.1.2 predates the presence endpoint. Before choosing the light again, release it in its current controller.
 
 For UI-only changes after a compiler build, run `npm run build:ui`; it reuses the compiler artifacts. `npm run test:compiler` runs native/WASM parity checks. To run the original four Go package suites as well, use `python3 scripts/build-compiler.py --pure-tests`.
 

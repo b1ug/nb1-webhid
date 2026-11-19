@@ -34,7 +34,7 @@ await context.addInitScript(() => {
   const calls = {picker:[], opens:0, closes:0, reports:[], fail:false};
   window.__softwareHID = calls;
   const device = {vendorId:0x27b8, productId:0x01ed, productName:'Software test fixture', opened:false,
-    async open() { calls.opens++; this.opened=true; },
+    async open() { calls.opens++; if(calls.failOpen)throw Error('Fixture open failed'); this.opened=true; },
     async close() { calls.closes++; this.opened=false; },
     async sendFeatureReport(id, data) { calls.reports.push({id,bytes:[...data]}); if(calls.fail) throw Error('Software test lost acknowledgement'); }};
   Object.defineProperty(navigator, 'hid', {configurable:true, value:{addEventListener(){}, async requestDevice(options){calls.picker.push(options); return [device];}}});
@@ -62,6 +62,58 @@ async function waitReady(flat=false) {
   await page.waitForFunction(flat=>document.querySelector('[data-light-stage]')?.dataset.threeState===(flat?'static':'ready'),flat);
   await page.waitForFunction(()=>!document.querySelector('#preview').disabled);
 }
+async function daemonDiagnostics() {
+  await page.goto(base + mount + '?view=faces', {waitUntil:'networkidle'});
+  await waitReady(true);
+  const fixture = 'http://127.0.0.1:49386/v1/presence';
+  let calls = 0;
+  let identity = true;
+  await page.route(fixture, route => {
+    calls++;
+    assert.equal(route.request().method(), 'GET');
+    return route.fulfill({status:200, contentType:'application/json', headers:{'Access-Control-Allow-Origin':base},
+      body:JSON.stringify(identity ? {service:'nb1', api_version:'v1'} : {status:'ok'})});
+  });
+  try {
+    await page.locator('#connect').click();
+    await page.locator('#ownership').check();
+    await page.evaluate(() => { window.__softwareHID.failOpen = true; });
+    await page.locator('#connect').click();
+    await page.waitForSelector('#open-daemon-help:not([hidden])');
+    const hidError = await page.locator('#status').textContent();
+    assert.match(hidError, /could not open/);
+    assert.equal(calls, 0);
+    assert.equal(await page.locator('#daemon-port').inputValue(), '8931');
+    const check = page.locator('#open-daemon-help [data-daemon-check]');
+    await page.locator('#daemon-port').fill('65536');
+    await check.click();
+    assert.match(await page.locator('#daemon-result').textContent(), /1 to 65535/);
+    await page.locator('#daemon-port').fill('49386');
+    assert.equal(calls, 0);
+    await check.click();
+    await page.waitForFunction(() => document.querySelector('#daemon-result').textContent.includes('nb1 responded on port 49386'));
+    assert.equal(await page.locator('#daemon-debugger').getAttribute('href'), 'http://127.0.0.1:49386/demo/');
+    assert.equal(await page.locator('#daemon-debugger').getAttribute('target'), '_blank');
+    assert.equal(await page.locator('#status').textContent(), hidError);
+    assert.equal(await page.locator('#play').isDisabled(), true);
+    await page.locator('#daemon-port').fill('49385');
+    assert.equal(await page.locator('#daemon-result').textContent(), '');
+    assert.equal(await page.locator('#daemon-debugger').getAttribute('href'), null);
+    await page.locator('#daemon-port').fill('49386');
+    identity = false;
+    await page.locator('#options-daemon-help [data-daemon-check]').click();
+    await page.waitForFunction(() => document.querySelector('#daemon-result').textContent.includes('Could not confirm'));
+    await page.locator('#language').click();
+    assert.match(await page.locator('#daemon-result').textContent(), /未能确认端口 49386/);
+    await page.locator('#language').click();
+    assert.equal(calls, 2);
+    assert.deepEqual(await page.evaluate(() => window.__softwareHID.reports), []);
+    checks.push('USB opening failure and port editing stay passive; two explicit read-only checks distinguish nb1 and an unrelated response without enabling Play');
+  } finally {
+    await page.unroute(fixture);
+  }
+}
+
 async function cycleDefaults() {
   await page.goto(base+mount+'?view=faces',{waitUntil:'networkidle'});await waitReady(true);
   await page.evaluate(()=>{window.__cycleCompiles=[];const compile=window.nb1Go.compileRequest;window.nb1Go.compileRequest=raw=>{window.__cycleCompiles.push(JSON.parse(raw));return compile(raw);};});
@@ -290,6 +342,7 @@ try {
   assert.equal(publicBuild.extension.status,'experimental');
   assert.equal(publicBuild.core.source_commit,'b5cfe68cbb412d81a80d948b845aee5b0aba586b');
   checks.push('Public source and closed website manifest served intact under '+mount);
+  await daemonDiagnostics();
   if(process.argv.includes('--color-sets')||process.argv.includes('--catalog-only'))await colorSets();else if(process.argv.includes('--cycles'))await cycleDefaults();else if(process.argv.includes('--usability'))await usability();else {
   await page.goto(base+mount, {waitUntil:'networkidle'}); await waitReady();
   assert.equal(await page.locator('html').getAttribute('lang'),'en');

@@ -10,6 +10,8 @@ The website keeps the explicitly selected language in localStorage under its own
 
 The packaged website has no analytics, account, remote font, runtime CDN, PWA service worker or automatic task monitoring. Its local server serves static files on loopback. Source links and official documentation links open outside resources only when you follow them; browser/network software may have its own independent traffic.
 
+**Check local nb1** sends one read-only GET to `http://127.0.0.1:<port>/v1/presence` when you click it. You choose the port (default `8931`). Opening the website or the USB picker starts no check. The request omits credentials and the referrer, rejects redirects and times out after eight seconds. The page checks an nb1 API identity and keeps the result in memory. It sends no device serials or drafts, reads no device list and makes no playback or service changes. Chrome may ask for loopback or local network permission separately from USB permission. You can open the local debugger directly if a check is blocked or the daemon predates this endpoint.
+
 Closing a page does not clear its browser permission or turn the light off. Clear site data to remove its language choice; remove the origin's HID permission in Chrome settings to revoke future access.
 
 ## Extension

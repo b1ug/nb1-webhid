@@ -1,5 +1,6 @@
 import {loadCompiler, callCompiler} from './shared/compiler-loader.js';
 import {Blink1WebHID} from './shared/transport.js';
+import {daemonOrigin, probeDaemon} from './daemon-presence.js';
 import {SequencePlayer} from './shared/player.js';
 
 const $ = id => document.getElementById(id);
@@ -44,7 +45,11 @@ const messages = {
     inputTooLarge:'The request file must be at most 1 MiB.',
     draftRaced:'The draft changed while compiling. Use Play, Preview or Export again for the current draft.',
     errorPrefix:'Could not finish:',
-    openFailed:'The browser could not open blink(1). Stop the native nb1 daemon or disconnect other controllers using this light, then choose it again. If opening still fails, check the browser device permission. No light command was sent.',
+    openFailed:'The browser could not open blink(1). Check device permission or whether another controller is using this light.',
+    checkDaemon:'Check local nb1', daemonPort:'Local port', openDebugger:'Open local debugger',
+    daemonChecking:'Checking local nb1…', daemonInvalid:'Enter a port from 1 to 65535.',
+    daemonFound:'nb1 responded on port {port}. Open its debugger to see which lights it manages.',
+    daemonUnknown:'Could not confirm nb1 on port {port}. Check the port and browser permission, or open the debugger for older versions.',
     notConnected:'Connect your blink(1) before playing.',
     outcomeUnknown:'The device outcome is unknown. No automatic retry was made. Disconnect and check the light before reconnecting.',
     timingOverrun:'Playback stopped because the browser could not keep the timing. Keep this page visible and play again.',
@@ -107,7 +112,11 @@ const messages = {
     exporting:'正在编译可移植的 Sequence…', exportDone:'已导出 light.sequence.json，灯光未改变。',
     importDone:'已导入为自定义 JSON，播放前会先校验。', inputTooLarge:'请求文件不能超过 1 MiB。',
     draftRaced:'编译过程中草稿发生变化，请对当前草稿重新播放、预览或导出。',
-    errorPrefix:'未能完成：', openFailed:'浏览器未能打开 blink(1)。请先停止使用这只灯的 nb1 daemon，或断开其他控制器，再重新选择设备。如果仍然失败，再检查浏览器的设备授权。本次没有发送灯光指令。',
+    errorPrefix:'未能完成：', openFailed:'浏览器未能打开 blink(1)。请检查设备权限，或看看其他控制器是否正在使用这只灯。',
+    checkDaemon:'检查本机 nb1', daemonPort:'本机端口', openDebugger:'打开本机调试器',
+    daemonChecking:'正在检查本机 nb1…', daemonInvalid:'请输入 1 到 65535 之间的端口。',
+    daemonFound:'本机 nb1 已在端口 {port} 响应。可在调试器中查看它管理的灯。',
+    daemonUnknown:'未能确认端口 {port} 的 nb1。请检查端口和浏览器权限，旧版也可尝试打开调试器。',
     notConnected:'请先连接 blink(1)，再开始播放。',
     outcomeUnknown:'设备执行结果未知，未自动重试。请断开并检查灯的状态，再重新连接。',
     timingOverrun:'浏览器未能保持要求的时序，播放已停止。请保持此页面可见，再次手动播放。',
@@ -181,7 +190,59 @@ function errorText(error) {
   const key={open_failed:'openFailed',not_connected:'notConnected',outcome_unknown:'outcomeUnknown',timing_overrun:'timingOverrun',connection_changed:'connectionChanged'}[error?.code];
   return key?t(key):error?.message||String(error);
 }
+let daemonRequest = null;
+let daemonMessage = '';
+function renderDaemon() {
+  const port = $('daemon-port').value;
+  $('daemon-result').textContent = daemonMessage ? t(daemonMessage).replace('{port}', port) : '';
+  const origin = daemonOrigin(port);
+  const debuggerLink = $('daemon-debugger');
+  debuggerLink.hidden = !origin || !['daemonFound', 'daemonUnknown'].includes(daemonMessage);
+  if (debuggerLink.hidden) debuggerLink.removeAttribute('href');
+  else debuggerLink.href = origin + '/demo/';
+  $('daemon-port').setAttribute('aria-invalid', String(daemonMessage === 'daemonInvalid'));
+  for (const button of document.querySelectorAll('[data-daemon-check]')) button.disabled = Boolean(daemonRequest);
+}
+function clearDaemon() {
+  daemonRequest?.abort();
+  daemonRequest = null;
+  daemonMessage = '';
+  renderDaemon();
+}
+$('daemon-port').addEventListener('input', clearDaemon);
+window.addEventListener('pagehide', clearDaemon);
+async function checkDaemon(event) {
+  const port = $('daemon-port').value;
+  event.currentTarget.parentElement.append($('daemon-details'));
+  if (!daemonOrigin(port)) {
+    daemonMessage = 'daemonInvalid';
+    renderDaemon();
+    $('daemon-port').focus();
+    return;
+  }
+  const request = new AbortController();
+  daemonRequest = request;
+  daemonMessage = 'daemonChecking';
+  renderDaemon();
+  const timeout = setTimeout(() => request.abort(), 8000);
+  let found = false;
+  try { found = await probeDaemon(port, request.signal); } catch { /* A blocked or failed request is inconclusive. */ }
+  finally { clearTimeout(timeout); request.abort(); }
+  if (daemonRequest !== request) return;
+  daemonRequest = null;
+  daemonMessage = found ? 'daemonFound' : 'daemonUnknown';
+  renderDaemon();
+}
+for (const button of document.querySelectorAll('[data-daemon-check]')) button.addEventListener('click', checkDaemon);
+
 function renderNotice() {
+  const failure = notice.error?.code === 'open_failed';
+  const help = $('open-daemon-help');
+  if (help.hidden === failure) {
+    help.hidden = !failure;
+    (failure ? help : $('options-daemon-help')).append($('daemon-details'));
+  }
+  renderDaemon();
   $('status').textContent=notice.error?errorText(notice.error):t(notice.key);
   $('status').hidden=!notice.error&&['initialStatus','changed','customStatus','previewReady','exportDone','importDone','connectedStatus','completedStatus','stoppedStatus','offSent'].includes(notice.key);
   $('status').setAttribute('aria-live',notice.error?'polite':'off');
