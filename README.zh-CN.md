@@ -26,7 +26,7 @@ npm run serve
 
 打开 `http://127.0.0.1:4176/`。网页默认英文，可显式切换中文。页面提供扩展 ZIP：下载解压后，在桌面 Chrome 的 `chrome://extensions` 中开启开发者模式，通过“加载已解压的扩展程序”选择该目录。扩展需要 Chrome 117+，尚未上架商店。
 
-扩展 manifest 版本 `0.1.0` 只是开发标识，不代表已经发行。交付时请保留 `dist/build.json` 中的源码与散列身份。授权前可先阅读[安装、校验、更新与移除](docs/DISTRIBUTION.zh-CN.md)、[本地数据与权限](docs/PRIVACY.zh-CN.md)及[支持证据表](docs/DISTRIBUTION.zh-CN.md#支持证据)。
+扩展 manifest 版本 `0.1.1` 只是开发标识，不代表已经发行。交付时请保留 `dist/build.json` 中的源码与散列身份。授权前可先阅读[安装、校验、更新与移除](docs/DISTRIBUTION.zh-CN.md)、[本地数据与权限](docs/PRIVACY.zh-CN.md)及[支持证据表](docs/DISTRIBUTION.zh-CN.md#支持证据)。
 
 请先停止正在使用同一只灯的 daemon 或其他控制器，再明确选择设备。浏览器不会遵守 nb1 的原生进程锁；设备授权与系统 USB 访问条件仍适用。
 
