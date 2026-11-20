@@ -63,7 +63,8 @@ try {
         if (!document.hidden && innerWidth > 0 && innerHeight > 0 && box?.width > 0 && box.height > 0) {
           const label = document.createRange();
           label.selectNodeContents(button);
-          frames.push({viewport: innerWidth, width: box.width, height: box.height,
+          frames.push({viewport: innerWidth, body: document.body.offsetWidth, content: document.documentElement.scrollWidth,
+            width: box.width, height: box.height,
             labelLines: label.getClientRects().length, font: getComputedStyle(button).fontSize});
         }
         if (frames.length && performance.getEntriesByName('first-contentful-paint').length) {
@@ -98,7 +99,10 @@ try {
     await writeFile(path.join(output, 'extension-popup-first-visible.json'), JSON.stringify(openingFrames) + '\n');
   }
   for (const frame of openingFrames) {
-    assert.equal(frame.viewport, 370, 'the first visible toolbar must have its designed width');
+    assert.equal(frame.body, 370, 'the first visible toolbar body must have its designed width');
+    // Chrome can allocate a wider native surface on Linux.
+    assert.ok(frame.viewport >= frame.body && frame.content <= frame.viewport,
+      'the first visible toolbar must fit without horizontal overflow');
     assert.ok(frame.height >= 44, 'the first visible Set control must have a full-height hit target');
     assert.equal(frame.labelLines, 1, 'the first visible Set label must fit on one line');
     assert.equal(frame.font, '15px', 'the first visible Set label must have the normal font size');
