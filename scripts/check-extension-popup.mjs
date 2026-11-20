@@ -1,7 +1,7 @@
 // Exercise Chrome's toolbar bubble, which auto-sizes differently from a tab.
 import assert from 'node:assert/strict';
-import {once} from 'node:events';
-import {mkdir, mkdtemp, rm, writeFile} from 'node:fs/promises';
+import {on, once} from 'node:events';
+import {mkdir, mkdtemp, readFile, rm, writeFile} from 'node:fs/promises';
 import {tmpdir} from 'node:os';
 import path from 'node:path';
 import {chromium} from 'playwright';
@@ -9,30 +9,37 @@ import {chromium} from 'playwright';
 const extension = path.resolve(process.argv[2] || 'dist/extension');
 const profile = await mkdtemp(path.join(tmpdir(), 'nb1-popup-'));
 const output = process.env.NIGHTLAB_ARTIFACT_DIR;
-let context;
+let context, socket;
 
 try {
   context = await chromium.launchPersistentContext(profile, {
     channel: 'chromium', headless: true, ignoreDefaultArgs: ['--disable-extensions'],
-    args: [`--load-extension=${extension}`, `--disable-extensions-except=${extension}`]
+    args: ['--remote-debugging-port=0', `--load-extension=${extension}`, `--disable-extensions-except=${extension}`]
   });
   const worker = context.serviceWorkers()[0] || await context.waitForEvent('serviceworker');
-  const cdp = await context.newCDPSession(context.pages()[0]);
-  await worker.evaluate(() => chrome.action.openPopup());
-  const {targetInfos} = await cdp.send('Target.getTargets');
-  const popup = targetInfos.find(target => target.url === new URL('popup.html', worker.url()).href);
-  assert.ok(popup, 'Chrome must open the packaged toolbar popup');
-  // A toolbar popup is not a Playwright tab. Attach to its actual CDP target.
-  const {sessionId} = await cdp.send('Target.attachToTarget', {targetId: popup.targetId});
-  let id = 0;
+  // Toolbar popups are not Playwright pages. Observe the native Chrome target
+  // before openPopup() returns so a resize on startup cannot escape the test.
+  const [port, endpoint] = (await readFile(path.join(profile, 'DevToolsActivePort'), 'utf8')).trim().split('\n');
+  socket = new WebSocket(`ws://127.0.0.1:${port}${endpoint}`);
+  await once(socket, 'open', {signal: AbortSignal.timeout(10000)});
+  let id = 0, sessionId;
+  async function waitForMessage(matches, description) {
+    const signal = AbortSignal.timeout(10000);
+    try {
+      for await (const [event] of on(socket, 'message', {signal})) {
+        const message = JSON.parse(event.data);
+        if (matches(message)) return message;
+      }
+    } catch (error) {
+      if (signal.aborted) throw new Error(`Timed out waiting for ${description}`, {cause: error});
+      throw error;
+    }
+  }
   async function command(method, params) {
     const request = ++id;
-    const response = once(cdp, 'Target.receivedMessageFromTarget', {signal: AbortSignal.timeout(10000)});
-    await cdp.send('Target.sendMessageToTarget', {sessionId, message: JSON.stringify({id: request, method, params})});
-    const [event] = await response;
-    const message = JSON.parse(event.message);
-    assert.equal(event.sessionId, sessionId);
-    assert.equal(message.id, request);
+    const response = waitForMessage(message => message.id === request, method);
+    socket.send(JSON.stringify({id: request, method, params, sessionId}));
+    const message = await response;
     assert.ifError(message.error);
     return message.result;
   }
@@ -45,9 +52,60 @@ try {
     return result.value;
   }
 
+  function recordOpening() {
+    window.openingFrames = new Promise((resolve, reject) => {
+      const deadline = setTimeout(() => reject(new Error('Toolbar never reached its first contentful paint')), 5000);
+      const frames = [];
+      function sample() {
+        const button = document.querySelector('#set');
+        // Chrome can expose an empty surface before there is a layout to paint.
+        const box = button?.getBoundingClientRect();
+        if (!document.hidden && innerWidth > 0 && innerHeight > 0 && box?.width > 0 && box.height > 0) {
+          const label = document.createRange();
+          label.selectNodeContents(button);
+          frames.push({viewport: innerWidth, width: box.width, height: box.height,
+            labelLines: label.getClientRects().length, font: getComputedStyle(button).fontSize});
+        }
+        if (frames.length && performance.getEntriesByName('first-contentful-paint').length) {
+          clearTimeout(deadline);
+          resolve(frames);
+        } else {
+          requestAnimationFrame(sample);
+        }
+      }
+      requestAnimationFrame(sample);
+    });
+  }
+
+  await command('Target.setAutoAttach', {autoAttach: true, waitForDebuggerOnStart: true,
+    flatten: true, filter: [{type: 'other'}, {exclude: true}]});
+  const attached = waitForMessage(message => message.method === 'Target.attachedToTarget', 'the Chrome toolbar target');
+  await Promise.all([
+    attached.then(async ({params}) => {
+      sessionId = params.sessionId;
+      await command('Page.enable');
+      await command('Page.addScriptToEvaluateOnNewDocument', {source: `(${recordOpening})()`});
+      await command('Runtime.runIfWaitingForDebugger');
+    }),
+    worker.evaluate(() => chrome.action.openPopup())
+  ]);
+  assert.equal(await evaluate(() => location.href), new URL('popup.html', worker.url()).href,
+    'Chrome must open the packaged toolbar popup');
+  const openingFrames = await evaluate(() => window.openingFrames);
+  assert.ok(openingFrames?.length, 'the toolbar popup must contain visible controls at startup');
+  if (output) {
+    await mkdir(output, {recursive: true});
+    await writeFile(path.join(output, 'extension-popup-first-visible.json'), JSON.stringify(openingFrames) + '\n');
+  }
+  for (const frame of openingFrames) {
+    assert.equal(frame.viewport, 370, 'the first visible toolbar must have its designed width');
+    assert.ok(frame.height >= 44, 'the first visible Set control must have a full-height hit target');
+    assert.equal(frame.labelLines, 1, 'the first visible Set label must fit on one line');
+    assert.equal(frame.font, '15px', 'the first visible Set label must have the normal font size');
+  }
+
   async function screenshot(name) {
     if (!output) return;
-    await mkdir(output, {recursive: true});
     const {data} = await command('Page.captureScreenshot', {format: 'png'});
     await writeFile(path.join(output, `extension-popup-${name}.png`), Buffer.from(data, 'base64'));
   }
@@ -191,6 +249,7 @@ try {
     assert.equal(metrics.wordmarkLines, 1, 'nb1 must stay on one line');
   }
 } finally {
+  socket?.close();
   await context?.close();
   await rm(profile, {recursive: true, force: true});
 }
