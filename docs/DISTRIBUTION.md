@@ -2,7 +2,7 @@
 
 [简体中文](DISTRIBUTION.zh-CN.md) · [Playback](PLAYBACK.md) · [Extension](EXTENSION.md) · [Privacy](PRIVACY.md)
 
-The current package is a **development candidate**, not a Chrome Web Store release or an officially supported hardware bundle. The extension manifest version is **0.1.0**. That number alone does not identify the source or prove hardware compatibility: keep the accompanying build record and checksum.
+The current package is a **development candidate**, not a Chrome Web Store release or an officially supported hardware bundle. The extension manifest version is **0.1.1**. That number alone does not identify the source or prove hardware compatibility: keep the accompanying build record and checksum.
 
 ## Choose a path
 

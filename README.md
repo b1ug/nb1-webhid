@@ -32,7 +32,7 @@ npm run serve
 
 Open `http://127.0.0.1:4176/`. The website offers a ZIP under **Extension package and instructions**. Unzip it, enable Developer mode at `chrome://extensions`, then use **Load unpacked**. It is not a Chrome Web Store release. Use a supported desktop Chrome; the extension requires Chrome 117+.
 
-The extension manifest version is `0.1.0`, a development identifier rather than a published release. Keep the source and hashes in `dist/build.json` with a supplied package. See [installation, checksum, update and removal steps](docs/DISTRIBUTION.md), [local data and permissions](docs/PRIVACY.md), and the [support evidence table](docs/DISTRIBUTION.md#support-evidence) before granting device access.
+The extension manifest version is `0.1.1`, a development identifier rather than a published release. Keep the source and hashes in `dist/build.json` with a supplied package. See [installation, checksum, update and removal steps](docs/DISTRIBUTION.md), [local data and permissions](docs/PRIVACY.md), and the [support evidence table](docs/DISTRIBUTION.md#support-evidence) before granting device access.
 
 The site starts in English and offers an explicit Chinese switch. Device selection is never automatic. Stop other controllers before granting this page or the extension access to the same light. No native helper is required for WebHID, but browser and operating-system device permissions still apply.
 
