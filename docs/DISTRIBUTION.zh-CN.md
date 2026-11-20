@@ -10,7 +10,7 @@
 | --- | --- | --- |
 | 浏览器工作台 | 在受支持的桌面 Chrome 中打开本地网页，不需要原生 nb1 或扩展。 | 播放 Sequence 时保持页面可见。 |
 | Chrome 扩展 | 解压候选包，在 Chrome 开发者模式下加载目录。 | 后台负责 Set／Off 与一个倒计时，工具栏弹窗可以关闭。 |
-| 原生 nb1 | 按独立版本的原生候选安装指南操作。 | 通过前台 server 或可选系统服务接入 CLI、HTTP、MCP 与 Agent。 |
+| 原生 nb1 | 按[原生 nb1 安装指南](https://b1ug.github.io/nb1-guide/zh/install)安装正式版 CLI。 | 通过前台 server 或可选系统服务接入 CLI、HTTP、MCP 与 Agent。 |
 
 三者分别持有设备。连接下一种方式前，请先停止或断开上一种。文档站本身不连接 USB。
 
@@ -89,7 +89,7 @@ Disconnect 关闭连接，但保留授权。撤销网页访问时，在 Chrome �
 | --- | --- |
 | 网页编译与播放核心 | 原生／WASM 一致性、真实 Go 计划、取消和受限假 HID 执行已通过软件验证。 |
 | 网页／MV3 界面 | 独立 Chromium 软件检查覆盖英中、宽窄屏、真实扩展消息和接入假 HID 的浏览器 alarms。QA 使用 Chromium 156；Chrome 117 是声明的 API 下限，并非另做过该版本验收。 |
-| macOS 与 MK2 | 用户已确认释放原生占用后，浏览器连接成功。原始 Nightlab 之前版本已有受控 Mac/MK2 网页 WebHID 指令路径记录；当前干净快照的软件证据单独记录。扩展倒计时生命周期与当前快照真机资格仍待验，不改贴旧证据。 |
+| macOS 与 MK2 | 前台网页已有较早的 MK2 指令链路验证。[扩展 0.1.0 的单独实测](https://b1ug.github.io/nb1-guide/zh/browser#load-the-chrome-companion)中，Mac 保持唤醒、MK2 保持连接，关闭弹窗后一分钟提醒点亮了一只灯。0.1.1 工具栏通过中英文软件验证，其后台、HID 传输和 WASM 与实测包逐字节相同。休眠、浏览器重启、拔线与撤销权限仍待真机验证。 |
 | Windows／Linux | 桌面 Chrome 提供 API 是前提；真实 USB 权限与本包行为仍需分别验证。Linux 可能需要由系统／设备配置提供范围受限的 hidraw 规则。 |
 | MK3／其他代际 | 不声明已验收。设备 Pattern 内存、Flash 与上电效果不在本候选范围内。 |
 | Safari／Firefox／移动浏览器 | 不作为本候选的 HID 直连交付目标。离线编辑、编译取决于实际浏览器环境，不承诺 USB。 |

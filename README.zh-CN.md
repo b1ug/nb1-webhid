@@ -1,6 +1,6 @@
 # nb1 WebHID
 
-**开发预览。**网页与源码独立于原生 nb1 的稳定发行。扩展为**实验版**，关闭弹窗后的实体灯提醒仍待独立验收。
+**开发预览。**网页与源码独立于原生 nb1 的稳定发行。扩展为**实验版**。在保持唤醒的 Mac 上，关闭弹窗后，一分钟提醒点亮了一只 MK2。[查看测试版本与待验场景](https://b1ug.github.io/nb1-guide/zh/browser#load-the-chrome-companion)。
 
 交互式 3D 视图使用 [blink(1) Models](https://github.com/b1ug/blink1-models)。依赖锁固定 MK2 的源码归档，构建时校验模型清单并复制资源。页面从本站加载模型，也可在本机离线使用。
 
