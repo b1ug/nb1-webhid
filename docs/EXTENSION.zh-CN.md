@@ -59,7 +59,7 @@ manifest 只有 storage 与 alarms，不需要 nativeMessaging、offscreen、not
 
 ## 本阶段之后
 
-- 获取关闭弹窗、重启、睡眠、拔插／重连、撤销授权和控制器竞争的真实设备证据。
+- 在[关闭弹窗后的一分钟实灯测试](https://b1ug.github.io/nb1-guide/zh/browser#load-the-chrome-companion)基础上，补测浏览器重启、系统休眠、拔插重连、撤销授权和控制器竞争。
 - 用户启用后再按需授权下载完成提醒。
 - 来源白名单与受限消息的可信站点事件。
 - 调度与设备归属验收后，再加入 Go 多 Step、Pattern 导入导出、优先级与勿扰时间。

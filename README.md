@@ -4,7 +4,7 @@ A development preview of nb1 WebHID and the experimental nb1 Light Reminders Chr
 
 The interactive 3D view ships [blink(1) Models](https://github.com/b1ug/blink1-models). The dependency lock pins the exact MK2 source archive. The build verifies the model manifest and copies its assets into the site for same-origin, offline use.
 
-**Development preview.** The website and source are separate from stable native nb1 releases. The extension is **Experimental**: closing its popup before a real-device reminder remains pending acceptance.
+**Development preview.** The website and source are separate from stable native nb1 releases. The extension is **Experimental**. A one-minute reminder lit one MK2 after the popup closed on an awake Mac. See the [tested versions and remaining hardware checks](https://b1ug.github.io/nb1-guide/browser#load-the-chrome-companion).
 
 The workbench shares nb1's Go color, Action/Sequence compiler and finite playback planner. Play validates and compiles the current input automatically. Preview is optional, and the JSON editor is available under Advanced. Background reminders, browser lifecycle behavior and real USB evidence are tracked separately.
 

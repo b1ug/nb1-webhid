@@ -59,7 +59,7 @@ English is the default, with an explicit Chinese switch. The switch preserves au
 
 ## Planned after this milestone
 
-- Real Chrome/device evidence for popup closure, restart, sleep, unplug/reconnect, permission revocation, and competing controllers.
+- Extend the [closed-popup one-minute test](https://b1ug.github.io/nb1-guide/browser#load-the-chrome-companion) to browser restart, system sleep, unplug/reconnect, permission revocation and competing controllers.
 - Optional download-completion events, requested only when the user enables that feature.
 - Explicit trusted-site events with a source allowlist and bounded messages.
 - Go-backed multi-Step playback, Pattern import/export, priorities and quiet hours after scheduling and ownership behavior are qualified.

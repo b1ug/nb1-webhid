@@ -10,7 +10,7 @@ The current package is a **development candidate**, not a Chrome Web Store relea
 | --- | --- | --- |
 | Browser workbench | Open the locally served website in supported desktop Chrome. No native nb1 client or browser extension is needed. | Keep the page visible while a Sequence plays. |
 | Chrome companion | Unzip the candidate and load its extension directory in Chrome Developer mode. | Its worker handles Set/Off and one timer; the popup can close. |
-| Native nb1 | Use the separately released nb1 v0.1.1 CLI and its installation guide. | Use its foreground server or optional system service for CLI, HTTP, MCP and Agent workflows. |
+| Native nb1 | Follow the [native nb1 installation guide](https://b1ug.github.io/nb1-guide/install) for the released CLI. | Use its foreground server or optional system service for CLI, HTTP, MCP and Agent workflows. |
 
 These are separate device owners. Stop or disconnect one before connecting the next. The documentation site itself has no USB connection.
 
@@ -89,7 +89,7 @@ Disconnect closes the connection but retains permission. To revoke website acces
 | --- | --- |
 | Web compiler and player | Native/WASM parity, actual Go plans, cancellation and bounded fake-HID execution are software-verified. |
 | Website / MV3 UI | Isolated Chromium software checks cover English/Chinese, wide/narrow layouts, real extension messaging and browser alarms with fake HID. The QA browser was Chromium 156; Chrome 117 is the declared API minimum, not a separately tested browser version. |
-| macOS with MK2 | The user confirmed browser connection after releasing the native owner. The original pre-Nightlab build has controlled Mac/MK2 WebHID command-path evidence. This clean snapshot has separate software evidence; the extension timer lifecycle and new snapshot hardware qualification remain pending. No old evidence is relabeled. |
+| macOS with MK2 | The foreground page has an earlier MK2 command-path test. In a separate [extension 0.1.0 physical test](https://b1ug.github.io/nb1-guide/browser#load-the-chrome-companion), a one-minute reminder lit one connected MK2 after the popup closed on an awake Mac. The 0.1.1 toolbar passed English and Chinese software checks. Its worker, HID transport and WASM match the tested package. Sleep, browser restart, unplugging and permission revocation still need physical tests. |
 | Windows / Linux | Desktop Chrome's API availability is a platform prerequisite; physical USB access and this package's behavior need separate evidence. Linux may need a narrowly scoped hidraw rule supplied by the OS/device setup. |
 | MK3 / other generations | No hardware qualification is claimed. Device Pattern memory, Flash and startup effects are outside this browser candidate. |
 | Safari / Firefox / mobile browsers | Not delivery targets for direct HID in this candidate. Offline editing and compilation depend on the actual browser environment; no USB promise is made. |
