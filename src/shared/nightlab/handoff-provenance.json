@@ -34,18 +34,9 @@
       "handoff_path": "source/preview-timeline.js"
     },
     "studio-3d.js": {
-      "sha256": "2864d9f599003cf31b3ac3a6ecb8d9d7663e5aae7972d822fd2ca62094421baa",
-      "bytes": 23451,
+      "sha256": "77a899119ec1e7f93ba379b7683a34203ae23351f266da85354011d883c8ea91",
+      "bytes": 20435,
       "handoff_path": "source/studio-3d.js"
-    },
-    "light-model.js": {
-      "sha256": "764a0e92f26f6a6f32d00883c780965a852d335b951d9f27e2c1a316fae946e7",
-      "bytes": 23440
-    },
-    "enclosure-fit.js": {
-      "sha256": "33a8c0fba98e078b9497da20289508ff5da08a4cfccc8abafbeec36a336ece99",
-      "bytes": 21789,
-      "handoff_path": "source/enclosure-fit.js"
     },
     "studio-appearance.js": {
       "sha256": "0ebb37284d1e56cec1afdf616f253931ff480ab8401241b758a924a885a6a46c",
@@ -61,30 +52,6 @@
       "sha256": "75a48375d1b052ec8412b96f917cea2a43b5f52791eb6ce2514ce14d3b852520",
       "bytes": 4122,
       "handoff_path": "source/home.css"
-    },
-    "model-assets/source.json": {
-      "bytes": 14397,
-      "sha256": "2ad70d26bed617c673da560aada880008d388b5ca9e5520824ab6984284b211d"
-    },
-    "model-assets/seating-fit.json": {
-      "sha256": "04516bf501b32ff8667a1738a99fad4cfde10cb5bcfc30836841115111d0c3c5",
-      "bytes": 3399,
-      "handoff_path": "source/model-assets/seating-fit.json"
-    },
-    "model-assets/blink1mk2_enclosure_diffuser_v3k.stl": {
-      "sha256": "297986ee78dee7ce5607b43edd8967cd7b9d509496261214c5c68587d892af18",
-      "bytes": 3940514,
-      "handoff_path": "source/model-assets/blink1mk2_enclosure_diffuser_v3k.stl"
-    },
-    "model-assets/LICENSE.txt": {
-      "sha256": "e0a5f70deb9c79bb8533122057d00f6fb20b2c050ee63123e3e6538da329ceea",
-      "bytes": 351,
-      "handoff_path": "source/model-assets/LICENSE.txt"
-    },
-    "model-assets/blink1mk2_enclosure_frame_v3k.stl": {
-      "sha256": "ba0797af2873c0fc4c3477b87cde07ca1b9ec761eda001b21abe101ce035b465",
-      "bytes": 1606855,
-      "handoff_path": "source/model-assets/blink1mk2_enclosure_frame_v3k.stl"
     },
     "vendor/three/three.module.js": {
       "sha256": "104f56145899722094556490d787aae0617cc2fc3382f31df02d724ea1aee341",
@@ -117,18 +84,19 @@
       "handoff_path": "demo/vendor/three/OrbitControls.js"
     },
     "model-reference.html": {
-      "sha256": "643da4878ff9ea93bda509f8bac98c3ee85d018dcef17e3ff4bf1ce2ce6ce6f6",
-      "bytes": 3040
+      "sha256": "45170207c60295ac955b0bb87c5dbfc6a36b94eed9341f48156c27919851a1fe",
+      "bytes": 3169
     },
     "model-reference.js": {
-      "sha256": "8385d87339a9e7e0423a0db4fd0539e5f7ab453af168b5ef7c29415e23aaebd5",
-      "bytes": 3996
+      "sha256": "c98e154bc9a205fc2fccc30ca7682b70087634a2421a6f556e15f84f31fe7bb4",
+      "bytes": 4084
     }
   },
   "adaptations": [
     "Explicit data-nb1-app=browser replaces review route inference.",
     "Relative compiler and model-reference module paths support arbitrary browser mount bases.",
-    "Real accepted-target DOM adapter replaces software review report events."
+    "Real accepted-target DOM adapter replaces software review report events.",
+    "The WebHID preview follows the model catalog’s assembled variant, studio lighting and orthographic camera. Model source and license file checksums are supplied by its pinned manifest."
   ],
   "preserved": [
     "Approved artwork",
@@ -168,12 +136,11 @@
     ]
   },
   "public_export_note": "Public source keeps approved artwork, original CAD/licenses and rendering code. Internal screenshots, device receipts, project-note excerpts and private source paths remain outside this repository.",
-  "public_metadata_adaptation": "Only the faceMappingSource attribution string in light-model.js is replaced with a public source note; geometry, shaders and channel mapping retain their approved behavior.",
   "public_mobile_correction": "At the existing one-column breakpoint, reset the composer to grid-column 1 so the preview sidebar does not collapse into a zero-width implicit column. Tokens, fonts, model and shader code are preserved.",
   "model_package": {
     "repository": "https://github.com/b1ug/blink1-models",
-    "version": "0.1.0",
-    "manifest_sha256": "8da04a0b8af074ad9f559921bd19c3a2fe0e6522d479012c3373b95d383bf38a",
-    "commit": "dc531ccaa88e031faf6c0cd32e0102d9a18e9b8d"
+    "version": "0.2.0",
+    "manifest_sha256": "463635d56bc279abb88e19554370c5b9b9e6fe1c4fb9bf78917b6b1c43956a13",
+    "commit": "7be4133489b734314aba9f0fff944b57b7d21791"
   }
 }

@@ -2,7 +2,7 @@
 
 **开发预览。**网页与源码独立于原生 nb1 的稳定发行。扩展为**实验版**。在保持唤醒的 Mac 上，关闭弹窗后，一分钟提醒点亮了一只 MK2。[查看测试版本与待验场景](https://b1ug.github.io/nb1-guide/zh/browser#load-the-chrome-companion)。
 
-交互式 3D 视图使用 [blink(1) Models](https://github.com/b1ug/blink1-models)。依赖锁固定 MK2 的源码归档，构建时校验模型清单并复制资源。页面从本站加载模型，也可在本机离线使用。
+交互式 3D 视图使用 [blink(1) Models](https://b1ug.github.io/blink1-models/) 的 mk2 整装模型。两颗 LED 从电路板两面照亮扩散罩。依赖锁固定 MK2 的源码归档，构建时校验模型清单并复制资源。页面从本站加载模型，也可在本机离线使用。
 
 本开发预览项目提供网页工作台与 Chrome 扩展，复用 nb1 的 Go 编译核心与播放计划。网页选择动作、调整相关参数后即可播放，预览为可选操作；扩展负责手动控制与浏览器内倒计时提醒，无需原生客户端。
 

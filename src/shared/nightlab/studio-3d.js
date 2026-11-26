@@ -50,7 +50,7 @@ function init() {
   }));
   zoomTools.insertBefore(zoomScale, buttons['zoom-in']);
   theatre.append(canvas, tools, zoomTools, hint);
-  let renderer, controls, model, scene, camera, environment, ground;
+  let renderer, controls, model, scene, camera, environment;
   let disposed = false, active = false, visible = true, dirty = true, dragging = false;
   let rocking = false, rockStart = 0, lastTime = 0;
   const restingPosition = new THREE.Vector3();
@@ -102,54 +102,54 @@ function init() {
     renderer.setPixelRatio(Math.min(devicePixelRatio || 1, 1.75));
     renderer.outputColorSpace = THREE.SRGBColorSpace;
     renderer.toneMapping = THREE.ACESFilmicToneMapping;
-    renderer.toneMappingExposure = .9;
-    renderer.setClearColor(0xffffff, 0);
-    renderer.shadowMap.enabled = true;
-    renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+    renderer.toneMappingExposure = .65;
     scene = new THREE.Scene();
-    // Broad, low-contrast light keeps the inset matte housing readable without a bright trim.
-    const room = new THREE.Scene(); room.background = new THREE.Color(.3, .32, .34);
-    const cardPixels = new Uint8Array(128 * 64 * 4);
-    for (let y = 0; y < 64; y++) for (let x = 0; x < 128; x++) {
-      const offset = (y * 128 + x) * 4;
-      const value = Math.round(255 * (.18 + .82 * Math.sin(Math.PI * x / 127) * Math.sin(Math.PI * y / 63)));
-      cardPixels[offset] = cardPixels[offset + 1] = cardPixels[offset + 2] = value; cardPixels[offset + 3] = 255;
+    // Keep the studio lighting fixed as the LEDs and model view change.
+    const room = new THREE.Scene();
+    room.background = new THREE.Color(.3, .32, .34);
+    for (const [x, y, z, w, h, r, g, b] of [
+      [-3, 7, 5, 10, 7, 1.9, 1.9, 1.9], [2, 3.5, -5, 10, 3.5, 1.3, 1.35, 1.4],
+      [-7, 1, -1, 3, 8, .7, .75, .8], [7, 1, 3, 8, 5, .12, .15, .18],
+    ]) {
+      const card = new THREE.Mesh(new THREE.PlaneGeometry(w, h), new THREE.MeshBasicMaterial({
+        color: new THREE.Color(r, g, b), side: THREE.DoubleSide,
+      }));
+      card.position.set(x, y, z);
+      card.lookAt(0, 0, 0);
+      room.add(card);
     }
-    const cardMap = new THREE.DataTexture(cardPixels, 128, 64); cardMap.needsUpdate = true;
-    function card(width, height, position, color) {
-      const mesh = new THREE.Mesh(new THREE.PlaneGeometry(width, height), new THREE.MeshBasicMaterial({ color: new THREE.Color(...color), map: cardMap, side: THREE.DoubleSide }));
-      mesh.position.set(...position); mesh.lookAt(0, 0, 0); room.add(mesh);
-    }
-    card(10, 7, [-3, 7, 5], [1.9, 1.9, 1.9]);
-    card(10, 3.5, [2, 3.5, -5], [1.3, 1.35, 1.4]);
-    card(3, 8, [-7, 1, -1], [.7, .75, .8]);
-    card(8, 5, [7, 1, 3], [.12, .15, .18]);
-    const pmrem = new THREE.PMREMGenerator(renderer);
-    environment = pmrem.fromScene(room, .04);
+    const generator = new THREE.PMREMGenerator(renderer);
+    environment = generator.fromScene(room, .04);
     scene.environment = environment.texture;
-    room.traverse(object => { object.geometry?.dispose(); object.material?.dispose(); }); cardMap.dispose(); pmrem.dispose();
-    scene.environmentIntensity = .75;
-    scene.add(new THREE.HemisphereLight(0xfffdf8, 0xc2d0d8, .45));
-    const key = new THREE.DirectionalLight(0xfffcf6, 1.15); key.position.set(-3, 7, 5); key.castShadow = true;
-    key.shadow.mapSize.set(1024, 1024); key.shadow.camera.left = -5; key.shadow.camera.right = 5; key.shadow.camera.top = 5; key.shadow.camera.bottom = -5;
-    key.shadow.normalBias = .025; key.shadow.bias = -.0001;
-    scene.add(key);
-    const fill = new THREE.DirectionalLight(0xe6f2ff, .45); fill.position.set(4, 2, -4); scene.add(fill);
+    scene.environmentIntensity = .42;
+    generator.dispose();
+    for (const card of room.children) {
+      card.geometry.dispose();
+      card.material.dispose();
+    }
+    scene.add(new THREE.HemisphereLight(0xfffdf8, 0xc2d0d8, .24));
+    const key = new THREE.DirectionalLight(0xfffcf6, .62);
+    key.position.set(-3, 7, 5);
+    const fill = new THREE.DirectionalLight(0xe6f2ff, .24);
+    fill.position.set(4, 2, -4);
+    scene.add(key, fill);
     const loader = new STLLoader();
     const [diffuserGeometry, frameGeometry] = await Promise.all([
       loader.loadAsync(new URL('./model-assets/blink1mk2_enclosure_diffuser_v3k.stl', import.meta.url).href),
       loader.loadAsync(new URL('./model-assets/blink1mk2_enclosure_frame_v3k.stl', import.meta.url).href),
     ]);
     if (disposed) { diffuserGeometry.dispose(); frameGeometry.dispose(); return; }
-    model = createBlink1Model(THREE, { diffuserGeometry, frameGeometry });
+    model = createBlink1Model(THREE, { diffuserGeometry, frameGeometry, variant: 'assembled' });
     diffuserGeometry.dispose(); frameGeometry.dispose();
     model.group.rotation.set(.035, -.12, .1);
     scene.add(model.group);
     restingPosition.copy(model.group.position); restingRotation.copy(model.group.rotation);
     const box = new THREE.Box3().setFromObject(model.group);
     const target = box.getCenter(new THREE.Vector3());
-    camera = new THREE.PerspectiveCamera(30, 1, .05, 100);
-    camera.position.copy(target).add(new THREE.Vector3(-5.5, 7.5, 11)); camera.lookAt(target);
+    const viewRadius = box.getBoundingSphere(new THREE.Sphere()).radius * 1.08;
+    camera = new THREE.OrthographicCamera(-1, 1, 1, -1, .05, 100);
+    camera.position.copy(target).addScaledVector(new THREE.Vector3(-4.5, 5.6, 11).normalize(), viewRadius * 5.5);
+    camera.lookAt(target);
     controls = new OrbitControls(camera, canvas);
     controls.target.copy(target);
     controls.enablePan = false; controls.enableZoom = false;
@@ -193,7 +193,6 @@ function init() {
           dirty = true;
         }
       }
-      ground.visible = controls.getPolarAngle() < Math.PI / 2 + .1;
       if (dirty || moved || rocking) { renderer.render(scene, camera); stage.dataset.viewFrames = String(Number(stage.dataset.viewFrames || 0) + 1); dirty = false; }
       stats();
       if (!moved && !rocking && !dragging && !dirty) stopFrames();
@@ -203,41 +202,14 @@ function init() {
       if (width < 1 || height < 1) return;
       renderer.setSize(width, height, false);
       const aspect = width / height;
-      camera.updateMatrixWorld();
-      const point = new THREE.Vector3(), matrix = new THREE.Matrix4();
-      const direction = camera.position.clone().sub(controls.target).normalize();
-      const distance = camera.position.distanceTo(controls.target);
-      const tangent = Math.tan(THREE.MathUtils.degToRad(camera.fov / 2));
-      const vertical = Math.max(100, height - 92) / height;
-      const horizontal = Math.max(100, width - 28) / width;
-      let fittedDistance = 0;
-      model.group.updateMatrixWorld(true);
-      model.group.traverse(mesh => {
-        const positions = mesh.geometry?.getAttribute('position');
-        if (!positions) return;
-        matrix.multiplyMatrices(camera.matrixWorldInverse, mesh.matrixWorld);
-        for (let index = 0; index < positions.count; index++) {
-          point.fromBufferAttribute(positions, index).applyMatrix4(matrix);
-          const depth = point.z + distance;
-          fittedDistance = Math.max(fittedDistance, depth + Math.abs(point.y) / (tangent * vertical), depth + Math.abs(point.x) / (tangent * aspect * horizontal));
-        }
-      });
-      // A restrained photographic perspective lets reflections vary across planar metal.
-      camera.position.copy(controls.target).addScaledVector(direction, fittedDistance * 1.03);
-      camera.aspect = aspect; camera.updateProjectionMatrix(); controls.update(); requestRender();
+      const halfHeight = viewRadius / Math.min(1.28, aspect);
+      camera.top = halfHeight;
+      camera.bottom = -halfHeight;
+      camera.left = -halfHeight * aspect;
+      camera.right = halfHeight * aspect;
+      camera.updateProjectionMatrix();
+      requestRender();
     }
-    ground = new THREE.Mesh(new THREE.PlaneGeometry(30, 30), new THREE.ShadowMaterial({ color: 0x3c5260, opacity: .13, depthWrite: false }));
-    ground.rotation.x = -Math.PI / 2; ground.position.y = box.min.y - .035; ground.receiveShadow = true; scene.add(ground);
-    const shadowPixels = new Uint8Array(128 * 128 * 4);
-    for (let y = 0; y < 128; y++) for (let x = 0; x < 128; x++) {
-      const radius = ((x - 63.5) / 55) ** 2 + ((y - 63.5) / 48) ** 2;
-      const i = (y * 128 + x) * 4;
-      shadowPixels[i] = 35; shadowPixels[i + 1] = 55; shadowPixels[i + 2] = 65;
-      shadowPixels[i + 3] = Math.round(255 * Math.exp(-radius * 3) * Math.max(0, 1 - radius / 2));
-    }
-    const shadowMap = new THREE.DataTexture(shadowPixels, 128, 128); shadowMap.needsUpdate = true;
-    const contact = new THREE.Mesh(new THREE.PlaneGeometry(5.3, 3.3), new THREE.MeshBasicMaterial({ map: shadowMap, transparent: true, opacity: .2, depthWrite: false }));
-    contact.position.set(.05, 0, .008); ground.add(contact);
     const resize = new ResizeObserver(fit); resize.observe(theatre);
     const intersection = new IntersectionObserver(entries => { visible = entries[0]?.isIntersecting ?? true; if (visible) requestRender(); else { stopRock(); stopFrames(); } }); intersection.observe(theatre);
     function settleControls() {
@@ -308,7 +280,7 @@ function init() {
     canvas.addEventListener('webglcontextrestored', () => { stage.dataset.threeState = 'ready'; controls.enabled = true; updateLabels(); requestRender(); });
     window.addEventListener('pagehide', event => {
       endPinch(); stopRock(); stopFrames(); if (event.persisted) return;
-      disposed = true; resize.disconnect(); intersection.disconnect(); colorObserver.disconnect(); localeObserver.disconnect(); controls.dispose(); model.dispose(); ground.traverse(object => { object.geometry?.dispose(); object.material?.map?.dispose(); object.material?.dispose(); }); environment.dispose(); renderer.dispose();
+      disposed = true; resize.disconnect(); intersection.disconnect(); colorObserver.disconnect(); localeObserver.disconnect(); controls.dispose(); model.dispose(); environment.dispose(); renderer.dispose();
     });
     stage.dataset.threeState = 'ready'; updateLabels(); colors(); fit(); stats(); requestRender();
   }

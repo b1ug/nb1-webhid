@@ -22,7 +22,7 @@
     "test:nightlab:preview": "node scripts/nightlab/preview-timeline.test.mjs"
   },
   "devDependencies": {
-    "@b1ug/blink1-models": "https://codeload.github.com/b1ug/blink1-models/tar.gz/dc531ccaa88e031faf6c0cd32e0102d9a18e9b8d",
+    "@b1ug/blink1-models": "https://codeload.github.com/b1ug/blink1-models/tar.gz/7be4133489b734314aba9f0fff944b57b7d21791",
     "playwright": "1.64.1"
   }
 }
