@@ -21,7 +21,7 @@ function modelContract(){
     return digest.digest('hex');
   };
   const originals=inputs.map(geometryHash);for(const input of inputs)input.addEventListener('dispose',()=>inputDisposals++);
-  const model=createBlink1Model(THREE,{diffuserGeometry,frameGeometry}),scene=new THREE.Scene();scene.add(model.group);
+  const model=createBlink1Model(THREE,{diffuserGeometry,frameGeometry,variant:'assembled'}),scene=new THREE.Scene();scene.add(model.group);
   const geometries=new Set(),materials=new Set(),textures=new Set();
   model.group.traverse(node=>{
     if(node.geometry)geometries.add(node.geometry);
@@ -29,6 +29,7 @@ function modelContract(){
       materials.add(material);for(const value of Object.values(material))if(value?.isTexture)textures.add(value);
     }
   });
+  textures.add(model.group.getObjectByName('One continuous milky diffuser').material.userData.lightField.uniforms.nb1Transfer.value);
   const resources=[...geometries,...materials,...textures],disposals=new Map(resources.map(resource=>[resource,0]));
   for(const resource of resources)resource.addEventListener('dispose',()=>disposals.set(resource,disposals.get(resource)+1));
   try{
@@ -37,9 +38,12 @@ function modelContract(){
     assert.ok(frameSurface,'The assembled metal frame has a real material');
     assert.ok(!frameSurface.polygonOffset || (frameSurface.polygonOffsetFactor>=0&&frameSurface.polygonOffsetUnits>=0),
       'Hidden metal must not be depth-biased ahead of the plastic mating surface');
-    const lights=model.group.children.filter(node=>node.isPointLight).sort((a,b)=>b.position.y-a.position.y);
+    const lights=model.group.children.filter(node=>node.isSpotLight).sort((a,b)=>b.position.y-a.position.y);
     assert.equal(lights.length,2,'The model has two independently addressable physical light faces');
     const [upper,lower]=lights;assert.ok(upper.position.y>lower.position.y);
+    const emitters = ['L1','L2'].map(ref => model.group.getObjectByName(ref + ' RGB emitter'));
+    assert.ok(model.group.getObjectByName('White solder-mask PCB'));
+    assert.ok(emitters[0].position.y > emitters[1].position.y);
     model.group.updateMatrixWorld(true);
     const inverseModel=model.group.matrixWorld.clone().invert();
     function localBounds(mesh){
@@ -53,58 +57,56 @@ function modelContract(){
     const tongueBox=localBounds(tongue),roofBox=localBounds(roof),floorBox=localBounds(floor);
     const contactParts=[];model.group.traverse(node=>{if(/^Recessed contact \d+$/.test(node.name))contactParts.push(node);});
     assert.equal(contactParts.length,4,'The USB plug retains four recessed contact strips');
-    const faceMidpoint=(upper.position.y+lower.position.y)/2;
-    assert.ok(tongueBox.getCenter(new THREE.Vector3()).y<faceMidpoint,'The plastic tongue belongs to the lower ThingM side');
+    assert.ok(Math.abs(tongueBox.min.y - floorBox.max.y) < 1e-5, 'The tongue rests on the lower ThingM-side wall');
+    const ray = new THREE.Raycaster();
     let highestContact=-Infinity;
     for(const contact of contactParts){
       const box=localBounds(contact);highestContact=Math.max(highestContact,box.max.y);
-      assert.ok(box.min.y>=tongueBox.max.y-1e-5,'The exposed contacts sit above the plastic toward the blink(1)-side cavity');
+      const center = box.getCenter(new THREE.Vector3());
+      ray.set(new THREE.Vector3(center.x,roofBox.max.y,center.z), new THREE.Vector3(0,-1,0));
+      const [support] = ray.intersectObject(tongue);
+      assert.ok(support && Math.abs(box.min.y - support.point.y) < 1e-5, 'Each contact sits on the plastic mating tongue');
       assert.ok(box.max.y<roofBox.min.y&&box.min.x>roofBox.min.x,'The contacts remain recessed inside the metal shell');
-      const transform=new THREE.Matrix4().multiplyMatrices(inverseModel,contact.matrixWorld),normalMatrix=new THREE.Matrix3().getNormalMatrix(transform);
-      const positions=contact.geometry.getAttribute('position'),normals=contact.geometry.getAttribute('normal');
-      const point=new THREE.Vector3(),normal=new THREE.Vector3();let upward=0,samples=0;
-      for(let index=0;index<positions.count;index++){
-        point.fromBufferAttribute(positions,index).applyMatrix4(transform);
-        if(point.y<box.max.y-1e-5)continue;
-        upward+=normal.fromBufferAttribute(normals,index).applyNormalMatrix(normalMatrix).y;samples++;
-      }
-      assert.ok(samples>0&&upward/samples>.5,'Actual exposed contact normals face the upper cavity');
+      const [top] = ray.intersectObject(contact);
+      assert.ok(top && Math.abs(top.point.y - box.max.y) < 1e-5 && top.normal.y > .99, 'The mating contact faces the upper cavity');
     }
     assert.ok(roofBox.min.y-highestContact>tongueBox.min.y-floorBox.max.y,'The blink(1) face keeps the larger open half of the USB cavity');
     const diffusers=[];model.group.traverse(node=>{if(node.name==='One continuous milky diffuser')diffusers.push(node);});
     assert.equal(diffusers.length,1,'Both sources illuminate the same continuous diffuser mesh');
     const diffuser=diffusers[0],field=diffuser.material.userData.lightField;
-    assert.ok(diffuser.isMesh&&field&&typeof field.fragment==='string','The rendered diffuser exposes its production GLSL field');
+    assert.ok(diffuser.isMesh && field.uniforms.nb1Transfer.value.isData3DTexture, 'The diffuser samples the PCB-driven volume');
     for(const key of ['nb1SourceOne','nb1SourceTwo'])assert.ok(field.uniforms[key]?.value.isColor,'The field keeps independent linear-light source colors');
-    for(const key of ['nb1ShellMin','nb1ShellSize'])assert.ok(field.uniforms[key]?.value.isVector3,'The field samples continuous model coordinates');
-    assert.ok(field.uniforms.nb1ShellSize.value.toArray().every(value=>value>0));
+    for(const key of ['nb1GridMin','nb1GridSize'])assert.ok(field.uniforms[key]?.value.isVector3,'The field samples continuous model coordinates');
+    assert.ok(field.uniforms.nb1GridSize.value.toArray().every(value=>value>0));
     // Probe the actual material hook, rather than assuming a separately exposed
     // field is also the one used to render the physical diffuser.
     const shader={uniforms:{},vertexShader:THREE.ShaderLib.physical.vertexShader,fragmentShader:THREE.ShaderLib.physical.fragmentShader};
     diffuser.material.onBeforeCompile(shader);
-    assert.ok(shader.fragmentShader.includes(field.fragment),'The production material injects the same GLSL tested on the GPU');
+    assert.match(shader.fragmentShader, /texture\(nb1Transfer,/);
     for(const [key,uniform] of Object.entries(field.uniforms))assert.equal(shader.uniforms[key],uniform,'The rendered material shares the production field uniforms');
     const ownedGeometry=new Map([...geometries].map(geometry=>[geometry,geometryHash(geometry)]));
     const sources=()=>['nb1SourceOne','nb1SourceTwo'].map(key=>field.uniforms[key].value.toArray());
-    const expectSources=(one,two)=>assert.deepEqual(sources(),[one,two].map(value=>new THREE.Color(value||'#000000').toArray()),'Canonical LED colors remain independent and are decoded into linear light');
     model.setColors('#ff0000','#0000ff','draft');
-    assert.equal(upper.color.getHexString(),'ff0000');assert.equal(lower.color.getHexString(),'0000ff');
-    assert.ok(upper.intensity>0&&lower.intensity>0);expectSources('#ff0000','#0000ff');
-    const fixedSources=sources();
-    model.group.rotation.x=Math.PI;model.group.updateMatrixWorld(true);model.setColors('#ff0000','#0000ff','accepted');
-    assert.deepEqual(sources(),fixedSources,'Changing the object pose or draft/accepted label must not swap local source colors');
-    assert.equal(upper.color.getHexString(),'ff0000');assert.equal(lower.color.getHexString(),'0000ff');
-    model.setColors('#ff0000','#00ff00','draft');
-    assert.equal(upper.color.getHexString(),'ff0000');assert.equal(lower.color.getHexString(),'00ff00');
-    expectSources('#ff0000','#00ff00');
-    model.setColors('#804020','#204080','preview');expectSources('#804020','#204080');
-    model.setColors(null,'#0000ff','draft');
-    assert.equal(upper.intensity,0);assert.ok(lower.intensity>0);expectSources(null,'#0000ff');
-    model.setColors('#000000','#000000','draft');
-    assert.equal(upper.intensity,0);assert.equal(lower.intensity,0);expectSources('#000000','#000000');
+    assert.deepEqual(sources(), [[1,0,0], [0,0,1]]);
+    assert.equal(emitters[0].material.emissive.getHex(), 0xff0000);
+    assert.equal(emitters[1].material.emissive.getHex(), 0x0000ff);
+    assert.ok(upper.intensity > 0 && lower.intensity > 0);
+    assert.ok(upper.color.r > lower.color.r && lower.color.b > upper.color.b);
+    const fixedSources = sources();
+    model.group.rotation.x = Math.PI;
+    model.group.updateMatrixWorld(true);
+    model.setColors('#ff0000','#0000ff','accepted');
+    assert.deepEqual(sources(),fixedSources,'Pose and source label must preserve the PCB channel order');
+    model.setColors('#804020','#204080','preview');
+    assert.deepEqual(sources(), [[128,64,32], [32,64,128]].map(rgb => rgb.map(value => value / 255)),
+      'Each command byte is the linear PWM duty fraction of a PCB emitter');
+    model.setColors(null, '#0000ff', 'draft');
+    assert.deepEqual(sources(), [[0,0,0], [0,0,1]]);
+    assert.equal(emitters[0].material.emissiveIntensity, 0);
+    assert.ok(emitters[1].material.emissiveIntensity > 0);
     model.setColors('#ff0000','#0000ff','none');
     assert.equal(upper.intensity,0);assert.equal(lower.intensity,0);
-    expectSources(null,null);
+    assert.deepEqual(sources(), [[0,0,0],[0,0,0]]);
     for(const [geometry,original] of ownedGeometry)assert.equal(geometryHash(geometry),original,'Color and pose changes cannot reshape or remap the continuous shell or USB assembly');
     assert.deepEqual(inputs.map(geometryHash),originals,'Color and pose updates preserve input CAD geometry');
     const disposedSources=sources();model.dispose();

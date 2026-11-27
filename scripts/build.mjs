@@ -42,7 +42,11 @@ for(const kind of ['web','extension']){
     await fs.copyFile(path.join(root,'src/shared/player.js'),path.join(target,'shared/player.js'));
     await fs.cp(path.join(root,'src/shared/nightlab'),path.join(target,'shared/nightlab'),{recursive:true});
     const modelReceipt = JSON.parse(await fs.readFile(path.join(target, 'shared/nightlab/handoff-provenance.json'), 'utf8'));
-    await stageModel(path.join(target, 'shared/nightlab'), modelReceipt.model_package.manifest_sha256);
+    const nightlab = path.join(target, 'shared/nightlab');
+    stageModel(nightlab, modelReceipt.model_package.manifest_sha256);
+    const modelPackage = import.meta.resolve('@b1ug/blink1-models/stage');
+    await fs.copyFile(new URL('./models/mk2/manifest.json', modelPackage), path.join(nightlab, 'manifest.json'));
+    await fs.copyFile(new URL('./LICENSE', modelPackage), path.join(nightlab, 'MODEL-LICENSE.txt'));
   }
   await fs.mkdir(path.join(target,'shared/compiler'),{recursive:true});
   for(const name of runtimeFiles){

@@ -41,10 +41,17 @@ test('shared color sets are immutable authoring suggestions with independent edi
 });
 
 test('approved Nightlab tokens, viewer geometry, CAD, and licenses retain delivered bytes', async () => {
-  for (const name of ['airwave-tokens.css', 'studio.css', 'studio-skins.css', 'studio-appearance.js', 'preview-timeline.js', 'light-model.js', 'enclosure-fit.js', ...Object.keys(receipt.source_files).filter(name=>/^(model-assets|vendor\/three)\//.test(name))]) {
+  for (const name of ['airwave-tokens.css', 'studio.css', 'studio-skins.css', 'studio-appearance.js', 'preview-timeline.js', 'studio-3d.js', 'model-reference.html', 'model-reference.js', ...Object.keys(receipt.source_files).filter(name=>name.startsWith('vendor/three/'))]) {
     const bytes = await readFile(new URL('dist/web/shared/nightlab/' + name, root));
     assert.equal(digest(bytes), receipt.source_files[name].sha256, name);
   }
+  const modelRoot = new URL('dist/web/shared/nightlab/', root);
+  const manifest = await readFile(new URL('manifest.json', modelRoot));
+  assert.equal(digest(manifest), receipt.model_package.manifest_sha256);
+  for (const [name, record] of Object.entries(JSON.parse(manifest).files)) {
+    assert.equal(digest(await readFile(new URL(name, modelRoot))), record.sha256, name);
+  }
+  assert.ok((await readFile(new URL('MODEL-LICENSE.txt', modelRoot), 'utf8')).includes('MIT License'));
   for (const [name, value] of Object.entries(receipt.browser_styles)) assert.equal(digest(await readFile(new URL('src/web/'+name, root))), value.sha256, name);
   const brand = JSON.parse(await readFile(new URL('src/shared/asset-provenance.json', root), 'utf8'));
   for (const [name, value] of Object.entries(brand.files)) assert.equal(digest(await readFile(new URL(name, root))), value.sha256, name);

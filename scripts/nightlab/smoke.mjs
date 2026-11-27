@@ -503,6 +503,19 @@ try {
     assert.ok(+await page.locator('[data-light-stage]').getAttribute('data-view-zoom')<=1.8);
   } finally {await session.detach();}
   checks.push('Actual Ctrl-wheel bounds, ordinary wheel, Home reset, touch pinch and reduced motion');
+  // Verify that the actual interactive canvas receives both catalog colors.
+  await page.locator('[data-view-action="reset"]').click();
+  const images = [];
+  for (const [a,b] of [['#003dff','#000000'], ['#000000','#ff1804'], ['#003dff','#ff1804']]) {
+    await page.locator('#color-input-0').fill(a);
+    await page.locator('#color-input-1').fill(b);
+    await page.waitForFunction(([a,b]) => document.querySelector('[data-studio-color="one"]').textContent === a
+      && document.querySelector('[data-studio-color="two"]').textContent === b, [a,b]);
+    await frame();
+    images.push(await canvas.screenshot());
+  }
+  assert.ok(!images[0].equals(images[2]) && !images[1].equals(images[2]), 'Each authored LED changes the assembled canvas');
+  await writeFile(path.join(output,'assembled-blue-red.png'),images[2]); captures.push('assembled-blue-red.png');
   const poses=[{name:'front-on',left:6,down:4},{name:'usb-quarter',left:4,down:1},{name:'side',right:2,down:4},{name:'upper',left:1,up:1},{name:'lower',left:1,flip:true},{name:'front-high',left:6,down:2}];
   for(const lighting of ['lit','unlit']) {
     const a=lighting==='lit'?'#00ff00':'#000000',b=lighting==='lit'?'#ff0000':'#000000';
@@ -547,94 +560,82 @@ try {
   await shot('browser-context-loss.png');
   checks.push('2D-only creates no GL; off/unspecified fixed faces; root mount and context-loss fallback');
   await page.goto(base+mount+'?view=faces',{waitUntil:'networkidle'});await waitReady(true);
-    const metrics=await page.evaluate(async()=>{
-      const THREE=await import('./shared/nightlab/vendor/three/three.module.js');
-      const {createBlink1Model}=await import('./shared/nightlab/light-model.js');
-      const model=createBlink1Model(THREE);
-      let renderer,target,geometry,material;
-      const ensure=(condition,message)=>{if(!condition)throw Error(message);};
-      try{
-        const diffuser=model.group.getObjectByName('One continuous milky diffuser');
-        const field=diffuser?.material.userData.lightField;
-        ensure(field?.fragment&&field.uniforms,'The GPU probe requires the rendered model light field');
-        renderer=new THREE.WebGLRenderer({antialias:false});renderer.setSize(1,1,false);
-        renderer.toneMapping=THREE.NoToneMapping;renderer.outputColorSpace=THREE.LinearSRGBColorSpace;
-        const gl=renderer.getContext();
-        ensure(gl.getExtension('EXT_color_buffer_float'),'The software WebGL probe must support raw floating-point radiance');
-        target=new THREE.WebGLRenderTarget(1,1,{type:THREE.FloatType,format:THREE.RGBAFormat,
-          minFilter:THREE.NearestFilter,magFilter:THREE.NearestFilter,depthBuffer:false,stencilBuffer:false});
-        target.texture.colorSpace=THREE.NoColorSpace;
-        const probePosition={value:new THREE.Vector3()};
-        material=new THREE.ShaderMaterial({uniforms:{...field.uniforms,nb1ProbePosition:probePosition},
-          vertexShader:'void main() { gl_Position = vec4(position.xy, 0.0, 1.0); }',
-          fragmentShader:field.fragment+'\nuniform vec3 nb1ProbePosition;\nvoid main() { gl_FragColor = vec4(nb1LightField(nb1ProbePosition), 1.0); }',
-          depthTest:false,depthWrite:false,blending:THREE.NoBlending,toneMapped:false,precision:'highp'});
-        geometry=new THREE.PlaneGeometry(2,2);
-        const quad=new THREE.Mesh(geometry,material);quad.frustumCulled=false;
-        const scene=new THREE.Scene(),camera=new THREE.Camera();scene.add(quad);
-        renderer.setRenderTarget(target);
-        ensure(gl.checkFramebufferStatus(gl.FRAMEBUFFER)===gl.FRAMEBUFFER_COMPLETE,'The radiance probe needs a complete floating-point framebuffer');
-        const buffer=new Float32Array(4),minimum=field.uniforms.nb1ShellMin.value,size=field.uniforms.nb1ShellSize.value;
-        function sample([x,y,z]){
-          probePosition.value.set(minimum.x+x*size.x,minimum.y+y*size.y,minimum.z+z*size.z);
-          renderer.render(scene,camera);renderer.readRenderTargetPixels(target,0,0,1,1,buffer);
-          ensure(gl.getError()===gl.NO_ERROR,'Production GLSL must render and read back without a WebGL error');
-          ensure(Math.abs(buffer[3]-1)<1e-6,'The production field probe must draw an actual fragment');
-          const rgb=Array.from(buffer.slice(0,3));
-          ensure(rgb.every(value=>Number.isFinite(value)&&value>=0&&value<1),'Dim probe sources must yield finite, nonnegative, unclipped linear radiance');
-          return rgb;
-        }
-        const points=[[.5,.1,.5],[.5,.5,.5],[.5,.9,.5],[.05,.5,.5],[.95,.5,.5],[.5,.5,.05],[.5,.5,.95]];
-        function render(one,two,source='draft'){
-          model.setColors(one,two,source);return points.map(sample);
-        }
-        const near=(actual,expected,message)=>ensure(actual.every((value,index)=>Math.abs(value-expected[index])<=2e-6+Math.abs(expected[index])*2e-5),message);
-        const zero=render('#000000','#000000'),one=render('#400000',null),two=render(null,'#000040');
-        const both=render('#400000','#000040');let additionError=0;
-        for(let index=0;index<points.length;index++){
-          near(zero[index],[0,0,0],'Two black targets must produce no radiance');
-          const sum=one[index].map((value,channel)=>value+two[index][channel]-zero[index][channel]);
-          near(both[index],sum,'The actual GLSL must add both source contributions in linear light');
-          additionError=Math.max(additionError,...both[index].map((value,channel)=>Math.abs(value-sum[channel])));
-        }
-        ensure(both[2][0]>both[2][2]&&both[0][2]>both[0][0],'LED 1 dominates the upper blink(1) face and LED 2 the lower ThingM face');
-        ensure(one[2][0]>one[0][0]&&one[0][0]>1e-6,'A single upper source illuminates its own face more strongly while transmitting some light through the continuous shell');
-        ensure(two[0][2]>two[2][2]&&two[2][2]>1e-6,'A single lower source also has finite, weaker transmission to the opposite face');
-        const firstRed=render('#400000',null),secondRed=render(null,'#400000'),sameHue=render('#400000','#400000');
-        for(let index=0;index<points.length;index++){
-          near(sameHue[index],firstRed[index].map((value,channel)=>value+secondRed[index][channel]),'Equal source hues must add energy instead of normalizing it away');
-          ensure(sameHue[index][0]>Math.max(firstRed[index][0],secondRed[index][0]),'Overlapping equal hues must brighten the overlap');
-        }
-        model.setColors('#400000','#000040','draft');
-        let continuityRatio=0;
-        for(const x of [.05,.5,.95]){
-          const differences=[.02,.01,.005].map(epsilon=>{
-            const below=sample([x,.5-epsilon,.5]),above=sample([x,.5+epsilon,.5]);
-            return Math.hypot(...above.map((value,index)=>value-below[index]));
-          });
-          // Sample the old split plane, including both rims. A seam has a
-          // persistent jump; a continuous field converges as the gap shrinks.
-          ensure(differences[1]<=differences[0]*.7+1e-7&&differences[2]<=differences[0]*.4+1e-7,'The GPU light field must be continuous across the former upper/lower seam');
-          continuityRatio=Math.max(continuityRatio,differences[2]/Math.max(differences[0],1e-12));
-        }
-        const unrotated=points.map(sample);
-        model.group.rotation.set(Math.PI,.7,-.2);model.group.updateMatrixWorld(true);
-        const rotated=render('#400000','#000040','accepted');
-        for(let index=0;index<points.length;index++)near(rotated[index],unrotated[index],'Camera-independent local positions retain LED identity after pose and source-label changes');
-        const preview=render('#400000','#000040','preview');
-        for(let index=0;index<points.length;index++)near(preview[index],unrotated[index],'Screen-preview metadata must not alter the physical source binding');
-        const explicitOff=render('#000000','#000000'),unspecified=render(null,null),cleared=render('#400000','#000040','none');
-        for(const samples of [explicitOff,unspecified,cleared])for(const rgb of samples)near(rgb,[0,0,0],'Black, missing and unresolved sources cannot leave stale light in the shell');
-        const info=gl.getExtension('WEBGL_debug_renderer_info');
-        return {additionError,continuityRatio,upperTransmission:one[0][0]/one[2][0],lowerTransmission:two[2][2]/two[0][2],
-          renderer:info?gl.getParameter(info.UNMASKED_RENDERER_WEBGL):gl.getParameter(gl.RENDERER)};
-      }finally{
-        model.dispose();geometry?.dispose();material?.dispose();target?.dispose();renderer?.dispose();renderer?.forceContextLoss();
+  const metrics = await page.evaluate(async () => {
+    const THREE = await import('./shared/nightlab/vendor/three/three.module.js');
+    const {STLLoader} = await import('./shared/nightlab/vendor/three/STLLoader.js');
+    const {createBlink1Model} = await import('./shared/nightlab/light-model.js');
+    const loader = new STLLoader();
+    const [diffuserGeometry, frameGeometry] = await Promise.all(['diffuser','frame'].map(part =>
+      loader.loadAsync('./shared/nightlab/model-assets/blink1mk2_enclosure_' + part + '_v3k.stl')));
+    const model = createBlink1Model(THREE, {diffuserGeometry, frameGeometry, variant:'assembled'});
+    diffuserGeometry.dispose();
+    frameGeometry.dispose();
+    const renderer = new THREE.WebGLRenderer({antialias:false});
+    const size = 64;
+    const target = new THREE.WebGLRenderTarget(size, size, {type:THREE.FloatType});
+    const ensure = (condition, message) => { if (!condition) throw Error(message); };
+    try {
+      // Render the production CAD diffuser with its production material, in
+      // isolation from ambient light, the USB and light falling on other objects.
+      const shell = model.group.getObjectByName('One continuous milky diffuser').clone(false);
+      const scene = new THREE.Scene();
+      scene.add(shell);
+      const bounds = new THREE.Box3().setFromObject(shell);
+      const center = bounds.getCenter(new THREE.Vector3());
+      const radius = bounds.getBoundingSphere(new THREE.Sphere()).radius;
+      const camera = new THREE.OrthographicCamera(-radius,radius,radius,-radius,.01,100);
+      renderer.setSize(size,size);
+      renderer.setRenderTarget(target);
+      renderer.setClearColor(0,0);
+      renderer.toneMapping = THREE.NoToneMapping;
+      const gl = renderer.getContext();
+      ensure(gl.getExtension('EXT_color_buffer_float'),'A floating-point target is required for raw radiance');
+      function sample(one, two, source) {
+        model.setColors(one, two, source);
+        renderer.render(scene, camera);
+        const rgb = new Float32Array(size * size * 4);
+        renderer.readRenderTargetPixels(target,0,0,size,size,rgb);
+        ensure(gl.getError() === gl.NO_ERROR, 'Readback of actual physical shader failed');
+        return rgb;
       }
-    });
+      const channels = {};
+      let maxAdditionError = 0, tailMix = 0;
+      for (const [face, direction] of Object.entries({top:[0,1,0],bottom:[0,-1,0],tail:[1,0,0]})) {
+        camera.position.copy(center).addScaledVector(new THREE.Vector3(...direction),radius*3);
+        camera.up.set(...(face === 'tail' ? [0,1,0] : [0,0,-direction[1]]));
+        camera.lookAt(center);
+        const off = sample(null,null,'none');
+        const red = sample('#400000',null,'draft');
+        const blue = sample(null,'#000040','accepted');
+        const both = sample('#400000','#000040','preview');
+        const cleared = sample('#400000','#000040','none');
+        let r = 0, b = 0;
+        for (let i=0; i<both.length; i+=4) {
+          for (let c=0; c<3; c++) {
+            const expected = red[i+c] + blue[i+c] - off[i+c];
+            const error = Math.abs(expected - both[i+c]);
+            ensure(Number.isFinite(error) && error < .0005 + .0005*Math.abs(expected), 'L1 and L2 must add in linear radiance before tone mapping');
+            ensure(Math.abs(cleared[i+c] - off[i+c]) < .00001,'Clearing the preview must restore the unlit shell');
+            maxAdditionError = Math.max(maxAdditionError, error);
+          }
+          r += red[i] - off[i];
+          b += blue[i+2] - off[i+2];
+          if (face === 'tail' && red[i]-off[i] > .001 && blue[i+2]-off[i+2] > .001) tailMix++;
+        }
+        channels[face] = {red:r, blue:b};
+      }
+      ensure(channels.top.red > channels.bottom.red && channels.bottom.red > 0, 'L1 illuminates the top and scatters toward the bottom');
+      ensure(channels.bottom.blue > channels.top.blue && channels.top.blue > 0, 'L2 illuminates the bottom and scatters toward the top');
+      ensure(tailMix > 0, 'The round tail contains pixels lit by both PCB LEDs');
+      const info = gl.getExtension('WEBGL_debug_renderer_info');
+      return {channels, maxAdditionError, tailMix, renderer:gl.getParameter(info ? info.UNMASKED_RENDERER_WEBGL : gl.RENDERER)};
+    } finally {
+      model.dispose(); target.dispose(); renderer.dispose(); renderer.forceContextLoss();
+    }
+  });
   assert.match(metrics.renderer,/SwiftShader/i);
   await writeFile(path.join(output,'light-field-gpu.json'),JSON.stringify(metrics,null,2)+'\n');
-  checks.push('Production GLSL GPU probe: additive linear radiance, seam continuity, two-source dominance and pose-invariant identity');
+  checks.push('Assembled CAD physical shader: two-face dominance, additive radiance, tail mixing and clearing');
 
   await page.addInitScript(() => {
     const original=HTMLCanvasElement.prototype.getContext;
